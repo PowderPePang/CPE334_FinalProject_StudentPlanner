@@ -11,8 +11,13 @@
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
+    "cookie-parser": "^1.4.7",
+    "express-session": "^1.18.2",
+    "firebase": "^12.4.0",
+    "firebase-admin": "^13.5.0",
     "react": "^19.1.1",
     "react-bootstrap": "^2.10.10",
+    "react-cookie-consent": "^9.0.0",
     "react-dom": "^19.1.1",
     "react-google-button": "^0.8.0",
     "react-router-dom": "^7.9.4"
