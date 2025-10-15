@@ -5,7 +5,9 @@ import App from "./App.jsx";
 import Home from "./components/Home.jsx";
 import Login from "./components/Login.jsx";
 import Register from "./components/Register.jsx";
-import ProtectedRoute from "./auth/ProtectedRoute.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Unauthorized401 from "./components/Unauthorized401";
+import { Navigate } from "react-router-dom";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -33,6 +35,14 @@ const router = createBrowserRouter([
                 <Home />
             </ProtectedRoute>
         ),
+    },
+    {
+        path: "/unauthorized",
+        element: <Unauthorized401 />,
+    },
+    {
+        path: "*",
+        element: <Navigate to="/unauthorized" replace />,
     },
 ]);
 

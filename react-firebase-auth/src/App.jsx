@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, Routes, Route, Navigate } from "react-router-dom";
 import CookieConsent from "react-cookie-consent";
 import CookieSettings from "./components/CookieSettings";
+import Home from "./components/Home";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Unauthorized401 from "./components/Unauthorized401";
 import "./App.css";
 
 function App() {
     const [showCookieSettings, setShowCookieSettings] = useState(false);
-    const [showBanner, setShowBanner] = useState(true); // Add this line
+    const [showBanner, setShowBanner] = useState(true);
 
-    // Replace existing useEffect with this new one
     useEffect(() => {
         const cookieConsent = localStorage.getItem('cookieConsent');
         if (cookieConsent === 'true') {
@@ -23,17 +27,24 @@ function App() {
 
     return (
         <div className="container mt-5">
-            <h3 className="text-center">Welcome Page</h3>
-            <div className="button-container">
-                <Link to="/login" className="btn btn-success me-3">
-                    Login
-                </Link>
-                <Link to="/register" className="btn btn-primary">
-                    Register
-                </Link>
-            </div>
+            <Routes>
+                <Route path="/" element={
+                    <>
+                        <h3 className="text-center">Welcome Page</h3>
+                        <div className="button-container">
+                            <Link to="/login" className="btn btn-success me-3">Login</Link>
+                            <Link to="/register" className="btn btn-primary">Register</Link>
+                        </div>
+                    </>
+                } />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                <Route path="/unauthorized" element={<Unauthorized401 />} />
+                <Route path="*" element={<Navigate to="/unauthorized" replace />} />
+            </Routes>
 
-            {showBanner && (  // Add this condition
+            {showBanner && (
                 <CookieConsent
                     location="bottom"
                     buttonText="Accept All"
@@ -41,16 +52,16 @@ function App() {
                     enableDeclineButton
                     onAccept={() => {
                         localStorage.setItem('cookieConsent', 'true');
-                        setShowBanner(false);  // Add this line
+                        setShowBanner(false);
                     }}
                     onDecline={() => {
                         setShowCookieSettings(true);
-                        setShowBanner(false);  // Add this line
+                        setShowBanner(false);
                     }}
                     style={{ background: "#2B373B" }}
-                    buttonStyle={{ 
-                        backgroundColor: "#09a50eff", 
-                        color: "white", 
+                    buttonStyle={{
+                        backgroundColor: "#09a50eff",
+                        color: "white",
                         fontSize: "13px",
                         borderRadius: "5px",
                         margin: "10px"
@@ -64,12 +75,12 @@ function App() {
                 >
                     <div>
                         This website uses cookies to improve your experience.{" "}
-                        <button 
+                        <button
                             onClick={(e) => {
                                 e.preventDefault();
                                 setShowCookieSettings(true);
                             }}
-                            style={{ 
+                            style={{
                                 textDecoration: "underline",
                                 background: "none",
                                 border: "none",
