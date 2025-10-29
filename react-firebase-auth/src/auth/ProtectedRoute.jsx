@@ -1,15 +1,17 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
 
-function ProtectedRoute({ children }) {
+const ProtectedRoute = ({ children }) => {
     const { user } = useUserAuth();
+    const location = useLocation();
+    console.log("Current user:", user);
 
     if (!user) {
-        return <Navigate to="/" />;
+        // Redirect to login page with the attempted URL
+        return <Navigate to="/" state={{ from: location.pathname }} replace />;
     }
-
     return children;
-}
+};
 
 export default ProtectedRoute;
