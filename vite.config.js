@@ -5,6 +5,6 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
     plugins: [react()],
 
-    // path repository (github pages)
-    base: "/CPE334_FinalProject_StudentPlanner/",
+    // // path repository (github pages)
+    // base: "/CPE334_FinalProject_StudentPlanner/",
 });

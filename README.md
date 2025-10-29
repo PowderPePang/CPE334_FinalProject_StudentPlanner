@@ -98,9 +98,21 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export default app;
 ```
+# Step
+## 1. Install dependencies
+```
+npm install
+```
 
-## ▶️ Run the project
+## 2. Install Firebase
+```
+npm install firebase
+```
+
+## 3. Run the project
+```
 npm run dev
+```
 
 ## 🌐 Open in browser
 Visit: http://localhost:5173
