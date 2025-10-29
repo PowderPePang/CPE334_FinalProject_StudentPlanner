@@ -1,15 +1,19 @@
 import { useNavigate } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
 import React, { useState } from 'react';
-import { Home, Search, Bell, User, Inbox, Calendar, ChevronLeft, ChevronRight, ArrowLeft, Filter } from 'lucide-react';
+import {
+  Home, Search, Bell, User, Inbox, Calendar,
+  ChevronLeft, ChevronRight, ArrowLeft, Filter
+} from 'lucide-react';
 
 
-function PageHome() { 
+function PageHome() {
   const [showFilter, setShowFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const { logOut } = useUserAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const handleLogout = async () => {
     try {
@@ -20,22 +24,42 @@ function PageHome() {
     }
   };
 
-  const [activeTab, setActiveTab] = useState('dashboard');
-
   const events = [
-    { id: 1, title: 'How To Study Like A Duck With Dr.Boonyarit Event!', category: 'Education', progress: 45, author: 'Prashant Kumar Singh', role: 'Software Developer' },
-    { id: 2, title: 'Sharing Session Event In CPE 10 Floor', category: 'Business', progress: 60, author: 'Prashant Kumar Singh', role: 'Software Developer' },
-    { id: 3, title: "Beginner's Guide To Becoming A Professional Frontend Developer By KBTK Talking", category: 'Technology', progress: 75, author: 'Prashant Kumar Singh', role: 'Software Developer' }
+    {
+      id: 1,
+      
+      title: 'How To Study Like A Duck With Dr.Boonyarit Event!',
+      category: 'Education',
+      progress: 45,
+      author: 'Prashant Kumar Singh',
+      role: 'Software Developer'
+    },
+    {
+      id: 2,
+      title: 'Sharing Session Event In CPE 10 Floor',
+      category: 'Business',
+      progress: 60,
+      author: 'Prashant Kumar Singh',
+      role: 'Software Developer'
+    },
+    {
+      id: 3,
+      title: "Beginner's Guide To Becoming A Professional Frontend Developer By KBTK Talking",
+      category: 'Technology',
+      progress: 75,
+      author: 'Prashant Kumar Singh',
+      role: 'Software Developer'
+    }
   ];
 
-  // Filter events based on search query and selected category
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.category.toLowerCase().includes(searchQuery.toLowerCase());
-    
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.category.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesCategory = selectedCategory === '' || event.category === selectedCategory;
-    
+
     return matchesSearch && matchesCategory;
   });
 
@@ -75,51 +99,39 @@ function PageHome() {
           </div>
           <div className="header-right">
             <button className="logout-btn" onClick={handleLogout}>Log out</button>
-            <button className="profile-btn">
-            <User className="profile-icon" />
-            </button>
-            <button className="bell-btn">
-            <Bell className="bell-icon" />
-            </button>
+            <button className="profile-btn"><User className="profile-icon" /></button>
+            <button className="bell-btn"><Bell className="bell-icon" /></button>
           </div>
         </div>
 
         {/* Search */}
-        <div className="search-container" style={{position:'relative'}}>
+        <div className="search-container" style={{ position: 'relative' }}>
           <div className="search-box">
             <Search className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Search your course here..." 
+            <input
+              type="text"
+              placeholder="Search your course here..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <button className="filter-btn" onClick={() => setShowFilter(!showFilter)}>
-            <Filter className="w-2 h-2"/>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+            <Filter className="w-2 h-2" />
           </button>
-
           {showFilter && (
             <div className="filter-dropdown">
-              <div 
-                onClick={() => handleCategoryFilter('Technology')}
-                style={{cursor: 'pointer', fontWeight: selectedCategory === 'Technology' ? 'bold' : 'normal'}}
-              >
-                Technology {selectedCategory === 'Technology' && '✓'}
-              </div>
-              <div 
-                onClick={() => handleCategoryFilter('Business')}
-                style={{cursor: 'pointer', fontWeight: selectedCategory === 'Business' ? 'bold' : 'normal'}}
-              >
-                Business {selectedCategory === 'Business' && '✓'}
-              </div>
-              <div 
-                onClick={() => handleCategoryFilter('Education')}
-                style={{cursor: 'pointer', fontWeight: selectedCategory === 'Education' ? 'bold' : 'normal'}}
-              >
-                Education {selectedCategory === 'Education' && '✓'}
-              </div>
+              {['Technology', 'Business', 'Education'].map(category => (
+                <div
+                  key={category}
+                  onClick={() => handleCategoryFilter(category)}
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: selectedCategory === category ? 'bold' : 'normal'
+                  }}
+                >
+                  {category} {selectedCategory === category && '✓'}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -127,8 +139,8 @@ function PageHome() {
         {/* Content */}
         <div className="content">
           <div className="banner">
-            <h2>No not miss a single event!</h2>
-            <p>Join more event!</p>
+            <h2>Don't miss a single event!</h2>
+            <p>Join more events!</p>
             <button className="banner-btn">Join Event Now! <span className="arrow-circle">→</span></button>
           </div>
 
@@ -140,34 +152,48 @@ function PageHome() {
             </div>
           </div>
 
-          {/* Show search results info */}
           {(searchQuery || selectedCategory) && (
-            <div style={{marginBottom: '1rem', color: '#666'}}>
+            <div style={{ marginBottom: '1rem', color: '#666' }}>
               Found {filteredEvents.length} event(s)
-              {searchQuery && ` matching "${searchQuery}"`}
-              {selectedCategory && ` in ${selectedCategory}`}
-              <button 
+              {searchQuery && <> matching "{searchQuery}"</>}
+              {selectedCategory && <> in {selectedCategory}</>}
+              <button
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCategory('');
                 }}
-                style={{marginLeft: '1rem', color: '#007bff', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline'}}
+                style={{
+                  marginLeft: '1rem',
+                  color: '#007bff',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
               >
                 Clear filters
               </button>
             </div>
           )}
 
-          {/* Events Grid */}
           {filteredEvents.length > 0 ? (
             <div className="events-grid">
               {filteredEvents.map(event => (
-                <div key={event.id} className="event-card">
-                  <div className={`event-image ${event.id === 1 ? 'code-bg' : event.id === 2 ? 'arm-bg' : 'pong-bg'}`}></div>
+                <article key={event.id} className="event-card">
+                  <div
+                    className="event-image"
+                    style={{
+                      backgroundImage: `url(/duck.jpg)`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center"
+                    }}
+                  />
                   <div className="event-content">
                     <span className="event-tag">{event.category}</span>
                     <div className="event-title">{event.title}</div>
-                    <div className="progress-bar"><div className="progress-fill" style={{width: `${event.progress}%`}}></div></div>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${event.progress}%` }}></div>
+                    </div>
                     <div className="event-author">
                       <div className="author-avatar"></div>
                       <div className="author-info">
@@ -176,16 +202,15 @@ function PageHome() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           ) : (
-            <div style={{textAlign: 'center', padding: '3rem', color: '#666'}}>
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
               <h3>No events found</h3>
               <p>Try adjusting your search or filters</p>
             </div>
           )}
-
         </div>
       </div>
     </div>
