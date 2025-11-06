@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Form, Alert, Button } from "react-bootstrap";
 import { useUserAuth } from "../context/UserAuthContext";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import "../style/Register.css";
 
 function Register() {
     const [firstName, setFirstName] = useState("");
@@ -12,6 +12,7 @@ function Register() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const { signUp } = useUserAuth();
 
     let navigate = useNavigate();
@@ -41,82 +42,123 @@ function Register() {
     };
 
     return (
-        <div>
-            <div className="row">
-                <div className="col-md-6 mx-auto">
-                    <h2 className="mb-3">Register</h2>
-                    {error && <Alert variant="danger">{error}</Alert>}
-                    <Form onSubmit={handleSubmit}>
-                        <Form.Group
-                            className="mb-3"
-                            controlId="formBasicFirstName"
-                        >
-                            <Form.Control
-                                type="text"
-                                placeholder="Enter your first name"
-                                onChange={(e) => setFirstName(e.target.value)}
-                                pattern="[a-zA-Z]{3,20}"
-                                title="3 to 20 letters"
-                                required
-                            />
-                        </Form.Group>
-
-                        <Form.Group
-                            className="mb-3"
-                            controlId="formBasicLastName"
-                        >
-                            <Form.Control
-                                type="text"
-                                placeholder="Enter your last name"
-                                onChange={(e) => setLastName(e.target.value)}
-                                pattern="[a-zA-Z]{3,20}"
-                                title="3 to 20 letters"
-                                required
-                            />
-                        </Form.Group>
-
-                        <Form.Group className="mb-3" controlId="formBasicPhone">
-                            <Form.Control
-                                type="text"
-                                placeholder="Enter your phone number e.g. 0812345678"
-                                onChange={(e) => setPhone(e.target.value)}
-                                pattern="[0-9]{10}"
-                                title="standard 10-digit number"
-                                required
-                            />
-                        </Form.Group>
-
-                        <Form.Group className="mb-3" controlId="formBasicEmail">
-                            <Form.Control
-                                type="email"
-                                placeholder="Email address"
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </Form.Group>
-
-                        <Form.Group
-                            className="mb-3"
-                            controlId="formBasicPassword"
-                        >
-                            <Form.Control
-                                type="password"
-                                placeholder="Password"
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </Form.Group>
-
-                        <div className="d-grid gap-2">
-                            <Button variant="primary" type="submit">
-                                Sign Up
-                            </Button>
-                        </div>
-                    </Form>
-                    <div className="p-4 box mt-3 text-center">
-                        Already have an account? <Link to="/login">Log in</Link>
-                    </div>
+        <div className="register-container">
+            <div className="register-content">
+                <button
+                    onClick={() => navigate("/")}
+                    className="back-to-welcome-btn"
+                >
+                    ← Back to Welcome
+                </button>
+                <div className="register-header">
+                    <h1 className="brand-title">Student event planner</h1>
                 </div>
+
+                <div className="register-title-section">
+                    <h2 className="register-main-title">Create an account</h2>
+                    <p className="register-subtitle">
+                        Already have an account?{" "}
+                        <Link to="/login" className="login-link">
+                            Log in
+                        </Link>
+                    </p>
+                </div>
+
+                {error && (
+                    <div
+                        className="alert alert-danger error-message"
+                        role="alert"
+                    >
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <label className="form-label">First Name</label>
+                        <input
+                            type="text"
+                            className="form-control custom-input"
+                            placeholder="Enter your first name"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="form-label">Last Name</label>
+                        <input
+                            type="text"
+                            className="form-control custom-input"
+                            placeholder="Enter your last name"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="form-label">Phone Number</label>
+                        <input
+                            type="tel"
+                            className="form-control custom-input"
+                            placeholder="Enter your 10-digits phone number"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            pattern="[0-9]{10}"
+                            title="Please enter a 10-digit phone number"
+                            required
+                        />
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="form-label">What's your email?</label>
+                        <input
+                            type="email"
+                            className="form-control custom-input"
+                            placeholder="Enter your email address"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="mb-2">
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                            <label className="form-label mb-0">
+                                Create a password
+                            </label>
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="password-toggle-btn"
+                            >
+                                <span className="eye-icon">👁</span>{" "}
+                                {showPassword ? "Hide" : "Show"}
+                            </button>
+                        </div>
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            className="form-control custom-input"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <p className="password-hint">
+                        Use 8 or more characters with a mix of letters, numbers
+                        & symbols
+                    </p>
+
+                    <button
+                        type="submit"
+                        className="btn btn-create-account w-100"
+                    >
+                        Create an account
+                    </button>
+                </form>
             </div>
         </div>
     );
