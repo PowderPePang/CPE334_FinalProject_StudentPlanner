@@ -7,6 +7,7 @@ import Login from "./components/Login.jsx";
 import Register from "./components/Register.jsx";
 import ProtectedRoute from "./auth/ProtectedRoute.jsx";
 import Unauthorized401 from "./components/Unauthorized401.jsx";
+import EventDetail from "./components/EventDetail.jsx";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
     {
         path: "/unauthorized401",
         element: <Unauthorized401 />,
+    },
+    {
+        path: "/event/:id",
+        element: <EventDetail />,
     },
     {
         path: "/home",

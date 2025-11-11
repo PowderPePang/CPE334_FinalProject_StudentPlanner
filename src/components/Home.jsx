@@ -24,10 +24,14 @@ function PageHome() {
     }
   };
 
+  // ฟังก์ชันสำหรับเปิดหน้ารายละเอียด event
+  const handleEventClick = (eventId) => {
+    navigate(`/event/${eventId}`);
+  };
+
   const events = [
     {
       id: 1,
-      
       title: 'How To Study Like A Duck With Dr.Boonyarit Event!',
       category: 'Education',
       progress: 45,
@@ -179,7 +183,12 @@ function PageHome() {
           {filteredEvents.length > 0 ? (
             <div className="events-grid">
               {filteredEvents.map(event => (
-                <article key={event.id} className="event-card">
+                <article 
+                  key={event.id} 
+                  className="event-card"
+                  onClick={() => handleEventClick(event.id)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div
                     className="event-image"
                     style={{
