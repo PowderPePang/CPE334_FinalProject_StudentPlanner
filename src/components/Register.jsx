@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import "../style/Register.css";
 
@@ -11,6 +11,7 @@ function Register() {
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [role, setRole] = useState("student");
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const { signUp } = useUserAuth();
@@ -25,21 +26,25 @@ function Register() {
             const userCredential = await signUp(email, password);
 
             // Then, add user info to Firestore
-            await addDoc(collection(db, "users"), {
-                uid: userCredential.user.uid, // Store the user's UID
-                firstName,
-                lastName,
-                phone,
-                email,
-                createdAt: new Date(),
+            await setDoc(doc(db, "users", user.uid), {
+                email: user.email,
+                displayName: `${firstName} ${lastName}`,
+                photoURL: null, // update User Profile Photo later
+                phone: phone,
+                role: role,
+                isActive: true,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
             });
 
+            // back to main menu
             navigate("/");
         } catch (err) {
             setError(err.message);
             console.log(err);
         }
     };
+
 
     return (
         <div className="register-container">
@@ -110,6 +115,23 @@ function Register() {
                             title="Please enter a 10-digit phone number"
                             required
                         />
+                    </div>
+                    
+                    {/* Role Selection */}
+                    <div className="mb-4">
+                        <label className="form-label">I am a...</label>
+                        <select
+                            className="form-control custom-input"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
+                            required
+                        >
+                            <option value="student">Student</option>
+                            <option value="organizer">Event Organizer</option>
+                        </select>
+                        <small className="form-text text-muted">
+                            Students can register for events. Organizers can create and manage events.
+                        </small>
                     </div>
 
                     <div className="mb-4">
