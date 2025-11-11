@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import "./App.css";
+import previewImage from "./assets/Untitled design-Photoroom.png"; // ✅ ใช้ไฟล์ที่คุณอัปโหลด
 
 function App() {
     return (
@@ -36,17 +36,22 @@ function App() {
                         Productivity Tool
                     </h1>
                     <p style={styles.heroDescription}>
-                        Many students struggle with procrastination, missed deadlines, and academic stress — Yes We Can Planner is here to change that.
-Designed to meet the real demands of student life, it’s the smarter way to plan, stay focused, and achieve success.
+                        Many students struggle with procrastination, missed deadlines, and academic stress — 
+                        Yes We Can Planner is here to change that.
+                        Designed to meet the real demands of student life, it’s the smarter way to plan, stay focused, and achieve success.
                     </p>
                     <Link to="/register" style={styles.btnGetStarted}>
                         Get started for free
                     </Link>
                 </div>
+
+                {/* ✅ App Preview Image (no border, no box shadow) */}
                 <div style={styles.heroImage}>
-                    <div style={styles.mockupPlaceholder}>
-                        📱 App Preview
-                    </div>
+                    <img
+                        src={previewImage}
+                        alt="App Preview"
+                        style={styles.previewImage}
+                    />
                 </div>
             </main>
         </div>
@@ -55,140 +60,133 @@ Designed to meet the real demands of student life, it’s the smarter way to pla
 
 const styles = {
     landingPage: {
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #fdf8e3f2 0%, #f5f5f5fe 100%)",
+        fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     },
     navbar: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '20px 60px',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "20px 60px",
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
     },
     navBrand: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
     },
     logo: {
-        width: '45px',
-        height: '45px',
-        backgroundColor: '#1976d2',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: '16px',
+        width: "45px",
+        height: "45px",
+        backgroundColor: "#EA580C",
+        borderRadius: "50%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "white",
+        fontWeight: "bold",
+        fontSize: "16px",
     },
     brandName: {
-        fontSize: '20px',
-        fontWeight: '600',
-        color: '#2c3e50',
+        fontSize: "20px",
+        fontWeight: "600",
+        color: "#2c3e50",
     },
     navLinks: {
-        display: 'flex',
-        gap: '40px',
-        alignItems: 'center',
+        display: "flex",
+        gap: "40px",
+        alignItems: "center",
     },
     navLink: {
-        color: '#1976d2',
-        textDecoration: 'none',
-        fontSize: '15px',
-        fontWeight: '500',
-        transition: 'color 0.3s ease',
-        cursor: 'pointer',
+        color: "#EA580C",
+        textDecoration: "none",
+        fontSize: "15px",
+        fontWeight: "500",
+        transition: "color 0.3s ease",
+        cursor: "pointer",
     },
     navActions: {
-        display: 'flex',
-        gap: '15px',
-        alignItems: 'center',
+        display: "flex",
+        gap: "15px",
+        alignItems: "center",
     },
     btnSignup: {
-        padding: '10px 28px',
-        backgroundColor: '#1976d2',
-        color: 'white',
-        textDecoration: 'none',
-        borderRadius: '25px',
-        fontSize: '15px',
-        fontWeight: '600',
-        transition: 'all 0.3s ease',
-        border: 'none',
-        cursor: 'pointer',
-        boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+        padding: "10px 28px",
+        backgroundColor: "#FBBF24",
+        color: "white",
+        textDecoration: "none",
+        borderRadius: "25px",
+        fontSize: "15px",
+        fontWeight: "600",
+        transition: "all 0.3s ease",
+        border: "none",
+        cursor: "pointer",
+        boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
     },
     btnLogin: {
-        padding: '10px 28px',
-        backgroundColor: 'transparent',
-        color: '#1976d2',
-        textDecoration: 'none',
-        borderRadius: '25px',
-        fontSize: '15px',
-        fontWeight: '600',
-        border: '2px solid #1976d2',
-        cursor: 'pointer',
-        transition: 'all 0.3s ease',
+        padding: "10px 28px",
+        backgroundColor: "transparent",
+        color: "#FBBF24",
+        textDecoration: "none",
+        borderRadius: "25px",
+        fontSize: "15px",
+        fontWeight: "600",
+        border: "2px solid #FBBF24",
+        cursor: "pointer",
+        transition: "all 0.3s ease",
     },
     heroSection: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '80px 60px',
-        maxWidth: '1400px',
-        margin: '0 auto',
-        gap: '60px',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "20px 40px", // ลดขอบรอบนอก
+        gap: "20px",          // ลดช่องว่างตรงกลางระหว่างข้อความกับรูป
     },
     heroContent: {
-        flex: '1',
-        maxWidth: '600px',
+        flex: "1",
+        maxWidth: "600px",
     },
     heroTitle: {
-        fontSize: '52px',
-        fontWeight: '700',
-        color: '#2c3e50',
-        lineHeight: '1.2',
-        marginBottom: '24px',
+        fontSize: "52px",
+        fontWeight: "700",
+        color: "#2c3e50",
+        lineHeight: "1.2",
+        marginBottom: "24px",
     },
     heroDescription: {
-        fontSize: '18px',
-        color: '#546e7a',
-        lineHeight: '1.7',
-        marginBottom: '36px',
+        fontSize: "18px",
+        color: "#546e7a",
+        lineHeight: "1.7",
+        marginBottom: "36px",
     },
     btnGetStarted: {
-        display: 'inline-block',
-        padding: '16px 40px',
-        backgroundColor: '#1976d2',
-        color: 'white',
-        textDecoration: 'none',
-        borderRadius: '30px',
-        fontSize: '16px',
-        fontWeight: '600',
-        transition: 'all 0.3s ease',
-        boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-        cursor: 'pointer',
+        display: "inline-block",
+        padding: "16px 40px",
+        backgroundColor: "#EA580C",
+        color: "white",
+        textDecoration: "none",
+        borderRadius: "30px",
+        fontSize: "16px",
+        fontWeight: "600",
+        transition: "all 0.3s ease",
+        boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
+        cursor: "pointer",
     },
     heroImage: {
-        flex: '1',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        flex: "1",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
     },
-    mockupPlaceholder: {
-        width: '400px',
-        height: '500px',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: '30px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '24px',
-        fontWeight: '600',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+    previewImage: {
+        width: "700px",
+        height: "auto",
+        borderRadius: "0px", // ✅ ไม่มีขอบโค้ง
+        boxShadow: "none",   // ✅ ไม่มีเงา
+        background: "transparent", // ✅ ไม่มีพื้นหลัง
     },
 };
 
