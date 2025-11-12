@@ -159,7 +159,7 @@ function Login() {
                             </label>
                         </div>
                         <Link
-                            to="/forgot-password"
+                            to="/forgotPassword"
                             className="forgot-password-link"
                         >
                             Forget your password

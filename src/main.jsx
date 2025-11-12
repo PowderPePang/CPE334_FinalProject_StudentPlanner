@@ -13,6 +13,7 @@ import EventConfirmed from "./components/EventConfirm.jsx";
 import EventCreate from "./components/EventCreate.jsx";
 import OrganizerHome from "./components/OrganizerHome.jsx";
 import EventEdit from "./components/EventEdit.jsx";
+import ForgotPassword from "./components/ForgotPassword.jsx";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -61,6 +62,10 @@ const router = createBrowserRouter([
     {
         path: "/event/:eventId/confirmed",
         element: <EventConfirmed />,
+    },
+    {
+        path: "/forgotPassword",
+        element: <ForgotPassword />,
     },
     {
         path: "/home",

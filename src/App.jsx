@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import "./App.css";
-import previewImage from "./assets/Untitled design-Photoroom.png"; // ✅ ใช้ไฟล์ที่คุณอัปโหลด
+import previewImage from "./assets/design-Photoroom.png"; // ✅ ใช้ไฟล์ที่คุณอัปโหลด
 
 function App() {
     return (
@@ -12,10 +12,18 @@ function App() {
                     <span style={styles.brandName}>Yes we can Planner</span>
                 </div>
                 <nav style={styles.navLinks}>
-                    <a href="#home" style={styles.navLink}>Home</a>
-                    <a href="#parents" style={styles.navLink}>For Partner</a>
-                    <a href="#about" style={styles.navLink}>About</a>
-                    <a href="#tips" style={styles.navLink}>Study Tips</a>
+                    <a href="#home" style={styles.navLink}>
+                        Home
+                    </a>
+                    <a href="#parents" style={styles.navLink}>
+                        For Partner
+                    </a>
+                    <a href="#about" style={styles.navLink}>
+                        About
+                    </a>
+                    <a href="#tips" style={styles.navLink}>
+                        Study Tips
+                    </a>
                 </nav>
                 <div style={styles.navActions}>
                     <Link to="/register" style={styles.btnSignup}>
@@ -31,14 +39,16 @@ function App() {
             <main style={styles.heroSection}>
                 <div style={styles.heroContent}>
                     <h1 style={styles.heroTitle}>
-                        The Ultimate 
+                        The Ultimate
                         <br />
                         Productivity Tool
                     </h1>
                     <p style={styles.heroDescription}>
-                        Many students struggle with procrastination, missed deadlines, and academic stress — 
-                        Yes We Can Planner is here to change that.
-                        Designed to meet the real demands of student life, it’s the smarter way to plan, stay focused, and achieve success.
+                        Many students struggle with procrastination, missed
+                        deadlines, and academic stress — Yes We Can Planner is
+                        here to change that. Designed to meet the real demands
+                        of student life, it’s the smarter way to plan, stay
+                        focused, and achieve success.
                     </p>
                     <Link to="/register" style={styles.btnGetStarted}>
                         Get started for free
@@ -143,7 +153,7 @@ const styles = {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "20px 40px", // ลดขอบรอบนอก
-        gap: "20px",          // ลดช่องว่างตรงกลางระหว่างข้อความกับรูป
+        gap: "20px", // ลดช่องว่างตรงกลางระหว่างข้อความกับรูป
     },
     heroContent: {
         flex: "1",
@@ -185,7 +195,7 @@ const styles = {
         width: "700px",
         height: "auto",
         borderRadius: "0px", // ✅ ไม่มีขอบโค้ง
-        boxShadow: "none",   // ✅ ไม่มีเงา
+        boxShadow: "none", // ✅ ไม่มีเงา
         background: "transparent", // ✅ ไม่มีพื้นหลัง
     },
 };

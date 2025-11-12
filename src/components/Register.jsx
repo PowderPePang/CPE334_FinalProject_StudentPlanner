@@ -1,72 +1,103 @@
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth, db } from "../firebase";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
-import { collection, addDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
-import "../style/Register.css";
+import { doc, getDoc } from "firebase/firestore";
+import "../style/Login.css";
 
-function Register() {
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
-    const [phone, setPhone] = useState("");
+function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [role, setRole] = useState("student");
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const { signUp } = useUserAuth();
+    const [rememberMe, setRememberMe] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const { logIn } = useUserAuth();
+
+    const googleProvider = new GoogleAuthProvider();
 
     let navigate = useNavigate();
+
+    const navigateByRole = async (user) => {
+        try {
+            // Get user document from Firestore
+            const userDocRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                const userRole = userData.role;
+
+                // Navigate based on role
+                if (userRole === "organizer") {
+                    navigate("/organizerHome");
+                } else if (userRole === "student") {
+                    navigate("/home");
+                } else {
+                    // Default to student home if role is not specified
+                    navigate("/home");
+                }
+            } else {
+                // If user document doesn't exist, default to student home
+                console.warn(
+                    "User document not found, defaulting to student home"
+                );
+                navigate("/home");
+            }
+        } catch (err) {
+            console.error("Error fetching user role:", err);
+            // Default to student home on error
+            navigate("/home");
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        setLoading(true);
         try {
-            // First, create the user account with Firebase Auth
-            const userCredential = await signUp(email, password);
-
-            // Then, add user info to Firestore
-            await setDoc(doc(db, "users", user.uid), {
-                email: user.email,
-                displayName: `${firstName} ${lastName}`,
-                photoURL: null, // update User Profile Photo later
-                phone: phone,
-                role: role,
-                isActive: true,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
-
-            // back to main menu
-            navigate("/");
+            const userCredential = await logIn(email, password);
+            await navigateByRole(userCredential.user);
         } catch (err) {
             setError(err.message);
             console.log(err);
+        } finally {
+            setLoading(false);
         }
     };
 
+    const handleGoogleLogin = async () => {
+        setError("");
+        setLoading(true);
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            await navigateByRole(result.user);
+            console.log("Done");
+        } catch (err) {
+            console.log(err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
-        <div className="register-container">
-            <div className="register-content">
+        <div className="login-container">
+            <div className="login-content">
                 <button
                     onClick={() => navigate("/")}
                     className="back-to-welcome-btn"
                 >
                     ← Back to Welcome
                 </button>
-                <div className="register-header">
+
+                <div className="login-header">
                     <h1 className="brand-title">Student event planner</h1>
                 </div>
 
-                <div className="register-title-section">
-                    <h2 className="register-main-title">Create an account</h2>
-                    <p className="register-subtitle">
-                        Already have an account?{" "}
-                        <Link to="/login" className="login-link">
-                            Log in
-                        </Link>
-                    </p>
+                <div className="login-title-section">
+                    <h2 className="login-main-title">Log in</h2>
                 </div>
 
                 {error && (
@@ -78,83 +109,64 @@ function Register() {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="form-label">First Name</label>
-                        <input
-                            type="text"
-                            className="form-control custom-input"
-                            placeholder="Enter your first name"
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <div className="mb-4">
-                        <label className="form-label">Last Name</label>
-                        <input
-                            type="text"
-                            className="form-control custom-input"
-                            placeholder="Enter your last name"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <div className="mb-4">
-                        <label className="form-label">Phone Number</label>
-                        <input
-                            type="tel"
-                            className="form-control custom-input"
-                            placeholder="Enter your 10-digits phone number"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            pattern="[0-9]{10}"
-                            title="Please enter a 10-digit phone number"
-                            required
-                        />
-                    </div>
-                    
-                    {/* Role Selection */}
-                    <div className="mb-4">
-                        <label className="form-label">I am a...</label>
-                        <select
-                            className="form-control custom-input"
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                            required
+                <div className="social-login-top">
+                    <button
+                        onClick={handleGoogleLogin}
+                        className="btn btn-google-login"
+                    >
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
                         >
-                            <option value="student">Student</option>
-                            <option value="organizer">Event Organizer</option>
-                        </select>
-                        <small className="form-text text-muted">
-                            Students can register for events. Organizers can create and manage events.
-                        </small>
-                    </div>
+                            <path
+                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                fill="#4285F4"
+                            />
+                            <path
+                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                fill="#34A853"
+                            />
+                            <path
+                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                fill="#FBBC05"
+                            />
+                            <path
+                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                fill="#EA4335"
+                            />
+                        </svg>
+                        Continue with Google
+                    </button>
+                </div>
 
-                    <div className="mb-4">
-                        <label className="form-label">What's your email?</label>
+                <div className="divider">
+                    <span className="divider-text">OR</span>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-3">
+                        <label className="form-label-login">Your email</label>
                         <input
                             type="email"
-                            className="form-control custom-input"
-                            placeholder="Enter your email address"
+                            className="form-control custom-input-login"
+                            placeholder="Email address"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
                         />
                     </div>
 
-                    <div className="mb-2">
+                    <div className="mb-3">
                         <div className="d-flex justify-content-between align-items-center mb-2">
-                            <label className="form-label mb-0">
-                                Create a password
+                            <label className="form-label-login mb-0">
+                                Your password
                             </label>
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="password-toggle-btn"
+                                className="password-toggle-btn-login"
                             >
                                 <span className="eye-icon">👁</span>{" "}
                                 {showPassword ? "Hide" : "Show"}
@@ -162,28 +174,60 @@ function Register() {
                         </div>
                         <input
                             type={showPassword ? "text" : "password"}
-                            className="form-control custom-input"
-                            placeholder="Enter your password"
+                            className="form-control custom-input-login"
+                            placeholder="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
                     </div>
-                    <p className="password-hint">
-                        Use 8 or more characters with a mix of letters, numbers
-                        & symbols
-                    </p>
+
+                    <div className="login-options">
+                        <div className="form-check">
+                            <input
+                                type="checkbox"
+                                className="form-check-input"
+                                id="rememberMe"
+                                checked={rememberMe}
+                                onChange={(e) =>
+                                    setRememberMe(e.target.checked)
+                                }
+                            />
+                            <label
+                                className="form-check-label remember-me-label"
+                                htmlFor="rememberMe"
+                            >
+                                Remember me
+                            </label>
+                        </div>
+                        <Link
+                            to="/forgot-password"
+                            className="forgot-password-link"
+                        >
+                            Forget your password
+                        </Link>
+                    </div>
 
                     <button
                         type="submit"
-                        className="btn btn-create-account w-100"
+                        className="btn btn-login w-100"
+                        disabled={loading}
                     >
-                        Create an account
+                        {loading ? "Logging in..." : "Log in"}
                     </button>
                 </form>
+
+                <div className="signup-section">
+                    <p className="signup-text">
+                        Don't have an account?{" "}
+                        <Link to="/register" className="signup-link">
+                            Sign up
+                        </Link>
+                    </p>
+                </div>
             </div>
         </div>
     );
 }
 
-export default Register;
+export default Login;

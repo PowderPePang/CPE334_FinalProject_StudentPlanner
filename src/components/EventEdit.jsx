@@ -155,7 +155,9 @@ function EventEdit() {
             navigate("/OrganizerHome");
         } catch (err) {
             console.error("Error updating event:", err);
-            alert("Failed to update event. Please try again.");
+            alert(
+                "Failed to update event. Please try again. Event image may be too large."
+            );
         } finally {
             setSaving(false);
         }
