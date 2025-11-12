@@ -1,234 +1,534 @@
-// src/components/EventDetail.js
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, MapPin, Clock, Users, Share2, Bookmark } from 'lucide-react';
+import { useNavigate, useParams } from "react-router-dom";
+import { useUserAuth } from "../context/UserAuthContext";
+import React, { useState, useEffect } from 'react';
+import {
+  Home, Search, Bell, User, Inbox, Calendar,
+  ArrowLeft, MapPin, Clock, Users, Share2, CalendarPlus
+} from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function EventDetail() {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const { logOut, user } = useUserAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  // ข้อมูล events
-  const eventsData = {
-    1: {
-      id: 1,
-      title: 'How To Study Like A Duck With Dr.Boonyarit Event!',
-      category: 'Education',
-      progress: 45,
-      author: 'Prashant Kumar Singh',
-      role: 'Software Developer',
-      date: 'November 25, 2025',
-      time: '14:00 - 16:00',
-      location: 'CPE Building, Room 501',
-      attendees: 45,
-      maxAttendees: 100,
-      description: 'Join us for an insightful session on effective study techniques with Dr.Boonyarit. Learn how to optimize your learning process and achieve better results in your academic journey.',
-      highlights: [
-        'Interactive learning techniques',
-        'Time management strategies',
-        'Memory enhancement methods',
-        'Q&A session with Dr.Boonyarit'
-      ]
-    },
-    2: {
-      id: 2,
-      title: 'Sharing Session Event In CPE 10 Floor',
-      category: 'Business',
-      progress: 60,
-      author: 'Prashant Kumar Singh',
-      role: 'Software Developer',
-      date: 'November 28, 2025',
-      time: '10:00 - 12:00',
-      location: 'CPE Building, 10th Floor',
-      attendees: 60,
-      maxAttendees: 100,
-      description: 'A collaborative sharing session where students and professionals exchange ideas, experiences, and insights about business development and career growth.',
-      highlights: [
-        'Networking opportunities',
-        'Industry insights',
-        'Career development tips',
-        'Experience sharing'
-      ]
-    },
-    3: {
-      id: 3,
-      title: "Beginner's Guide To Becoming A Professional Frontend Developer By KBTK Talking",
-      category: 'Technology',
-      progress: 75,
-      author: 'Prashant Kumar Singh',
-      role: 'Software Developer',
-      date: 'December 2, 2025',
-      time: '13:00 - 17:00',
-      location: 'Innovation Lab, Building A',
-      attendees: 75,
-      maxAttendees: 100,
-      description: 'Comprehensive workshop for aspiring frontend developers. Learn the essential skills, tools, and best practices to kickstart your career in web development.',
-      highlights: [
-        'HTML, CSS, JavaScript fundamentals',
-        'Modern frameworks overview',
-        'Portfolio building strategies',
-        'Hands-on coding exercises'
-      ]
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        setLoading(true);
+        const eventRef = doc(db, 'events', eventId);
+        const eventSnap = await getDoc(eventRef);
+        
+        if (eventSnap.exists()) {
+          setEvent({ id: eventSnap.id, ...eventSnap.data() });
+          setError(null);
+        } else {
+          setError("ไม่พบข้อมูล event");
+        }
+      } catch (err) {
+        console.error("Error fetching event:", err);
+        setError("ไม่สามารถโหลดข้อมูล event ได้");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (eventId) {
+      fetchEvent();
+    }
+  }, [eventId]);
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+      navigate("/");
+    } catch (err) {
+      console.log(err.message);
     }
   };
 
-  // ถ้า eventId ไม่ตรงกับ keys ของ eventsData ให้ default เป็น event แรก
-  const event = eventsData[Number(eventId)] || eventsData[1];
+  const handleBack = () => {
+    navigate('/home');
+  };
+
+  const handleJoinEvent = () => {
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmRegister = async () => {
+    // ส่งข้อมูลการลงทะเบียนไปยัง Firebase ตรงนี้
+    try {
+      // บันทึกการลงทะเบียนลง Firebase
+      // await addDoc(collection(db, 'registrations'), { ... })
+      
+      setShowConfirmModal(false);
+      // นำทางไปหน้ายืนยันการลงทะเบียนพร้อม QR Code
+      navigate(`/event/${eventId}/confirmed`);
+    } catch (err) {
+      console.error("Error registering:", err);
+      alert('เกิดข้อผิดพลาดในการลงทะเบียน');
+    }
+  };
+
+  const handleCancelRegister = () => {
+    setShowConfirmModal(false);
+  };
+
+  const handleAddToCalendar = () => {
+    // สามารถเพิ่ม logic การเพิ่มลงปฏิทินจริงได้ตรงนี้
+    alert('เพิ่มลงปฏิทินแล้ว!');
+  };
+
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="sidebar">
+          <div className="logo">
+            <div className="logo-icon"><Calendar /></div>
+            <div className="logo-text">PLANNER</div>
+          </div>
+          <div className="overview-title">OVERVIEW</div>
+          <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+            <Home /> Dashboard
+          </button>
+          <button className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => setActiveTab('inbox')}>
+            <Inbox /> Inbox
+          </button>
+          <button className={`nav-item ${activeTab === 'notification' ? 'active' : ''}`} onClick={() => setActiveTab('notification')}>
+            <Bell /> Notification
+          </button>
+        </div>
+        <div className="main-content">
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+            <p>กำลังโหลดข้อมูล...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <div className="container">
+        <div className="sidebar">
+          <div className="logo">
+            <div className="logo-icon"><Calendar /></div>
+            <div className="logo-text">PLANNER</div>
+          </div>
+          <div className="overview-title">OVERVIEW</div>
+          <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+            <Home /> Dashboard
+          </button>
+          <button className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => setActiveTab('inbox')}>
+            <Inbox /> Inbox
+          </button>
+          <button className={`nav-item ${activeTab === 'notification' ? 'active' : ''}`} onClick={() => setActiveTab('notification')}>
+            <Bell /> Notification
+          </button>
+        </div>
+        <div className="main-content">
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#ff0000' }}>
+            <p>{error}</p>
+            <button onClick={handleBack} style={{ marginTop: '1rem' }}>
+              กลับหน้าหลัก
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <button onClick={() => navigate('/home')} style={styles.backBtn}>
-          <ArrowLeft size={20} /> Back to Events
+    <div className="container">
+      {/* Sidebar */}
+      <div className="sidebar">
+        <div className="logo">
+          <div className="logo-icon"><Calendar /></div>
+          <div className="logo-text">PLANNER</div>
+        </div>
+
+        <div className="overview-title">OVERVIEW</div>
+
+        <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+          <Home /> Dashboard
+        </button>
+        <button className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => setActiveTab('inbox')}>
+          <Inbox /> Inbox
+        </button>
+        <button className={`nav-item ${activeTab === 'notification' ? 'active' : ''}`} onClick={() => setActiveTab('notification')}>
+          <Bell /> Notification
         </button>
       </div>
 
       {/* Main Content */}
-      <div style={styles.mainContent}>
-        {/* Left Column */}
-        <div style={styles.leftColumn}>
-          <div style={styles.eventImage}>
-            <img src="/duck.jpg" alt={event.title} style={styles.image} />
+      <div className="main-content">
+        <div className="header">
+          <div className="header-left">
+            <button className="back-btn" onClick={handleBack}>
+              <ArrowLeft /> Back
+            </button>
+            <span className="header-title">Student Event Planner</span>
           </div>
-
-          <div style={styles.eventInfo}>
-            <span style={styles.categoryBadge}>{event.category}</span>
-            <h1 style={styles.eventTitle}>{event.title}</h1>
-
-            <div style={styles.authorSection}>
-              <div style={styles.authorAvatar}></div>
-              <div>
-                <div style={styles.authorName}>{event.author}</div>
-                <div style={styles.authorRole}>{event.role}</div>
-              </div>
-            </div>
-
-            <div style={styles.divider}></div>
-
-            <h2 style={styles.sectionTitle}>About This Event</h2>
-            <p style={styles.description}>{event.description}</p>
-
-            <h3 style={styles.subTitle}>What You'll Learn</h3>
-            <ul style={styles.highlightsList}>
-              {event.highlights.map((highlight, index) => (
-                <li key={index} style={styles.highlightItem}>{highlight}</li>
-              ))}
-            </ul>
+          <div className="header-right">
+            <button className="logout-btn" onClick={handleLogout}>Log out</button>
+            <button className="profile-btn"><User className="profile-icon" /></button>
+            <button className="bell-btn"><Bell className="bell-icon" /></button>
           </div>
         </div>
 
-        {/* Right Column */}
-        <div style={styles.rightColumn}>
-          <div style={styles.detailsCard}>
-            {/* Registration Progress */}
-            <div style={styles.progressSection}>
-              <div style={styles.progressHeader}>
-                <span style={styles.progressLabel}>Registration</span>
-                <span style={styles.progressCount}>
-                  {event.attendees}/{event.maxAttendees}
-                </span>
+        {/* Event Detail Content */}
+        <div className="content">
+          <div className="event-detail-container">
+            {/* Event Image with Category Tag */}
+            <div style={{ position: 'relative', marginBottom: '2rem' }}>
+              <div 
+                className="event-detail-image"
+                style={{
+                  backgroundImage: `url(${event.imageUrl || '/duck.jpg'})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  height: '350px',
+                  borderRadius: '12px',
+                  position: 'relative'
+                }}
+              >
+                {/* Category Tag - positioned at bottom left of image */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '20px',
+                  left: '20px',
+                  backgroundColor: '#ff9800',
+                  color: 'white',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '4px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600'
+                }}>
+                  {event.category}
+                </div>
               </div>
-              <div style={styles.progressBar}>
-                <div style={{ ...styles.progressFill, width: `${event.progress}%` }}></div>
+            </div>
+
+            {/* Event Title and Register Button */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'flex-start', 
+              marginBottom: '2rem',
+              gap: '2rem'
+            }}>
+              <h1 style={{ 
+                fontSize: '2.5rem', 
+                fontWeight: 'bold', 
+                color: '#333', 
+                margin: 0,
+                flex: 1
+              }}>
+                {event.title}
+              </h1>
+              <button 
+                className="banner-btn"
+                onClick={handleJoinEvent}
+                style={{
+                  backgroundColor: '#ffd740',
+                  color: '#000',
+                  border: 'none',
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                🔧 Register
+              </button>
+            </div>
+
+            {/* Date and Time Section - Blue Border Box */}
+            <div style={{
+              border: '2px solid #2196f3',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              marginBottom: '2rem',
+              backgroundColor: '#f8f9fa'
+            }}>
+              <h3 style={{
+                fontSize: '1.2rem',
+                marginBottom: '1rem',
+                color: '#333',
+                fontWeight: '600'
+              }}>
+                Date and Time
+              </h3>
+              
+              <div style={{ display: 'flex', gap: '3rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Calendar size={20} color="#666" />
+                  <span style={{ color: '#666' }}>
+                    <strong>Day, Date:</strong> {event.date || 'TBA'}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Clock size={20} color="#666" />
+                  <span style={{ color: '#666' }}>
+                    <strong>Time:</strong> {event.time || 'TBA'}
+                  </span>
+                </div>
               </div>
-              <p style={styles.spotsRemaining}>
-                {event.maxAttendees - event.attendees} spots remaining
+
+              <button
+                onClick={handleAddToCalendar}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: 'white',
+                  border: '1px solid #2196f3',
+                  borderRadius: '6px',
+                  color: '#2196f3',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#2196f3';
+                  e.target.style.color = 'white';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'white';
+                  e.target.style.color = '#2196f3';
+                }}
+              >
+                <CalendarPlus size={18} />
+                + Add to Calendar
+              </button>
+            </div>
+
+            {/* Event Description */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ 
+                fontSize: '1.3rem', 
+                marginBottom: '1rem', 
+                color: '#333', 
+                fontWeight: '600' 
+              }}>
+                Event Description
+              </h3>
+              <p style={{ 
+                lineHeight: '1.8', 
+                color: '#666', 
+                fontSize: '1rem' 
+              }}>
+                {event.description || 'Lorem ipsum dolor sit amet consectetur. Eget vulputate sodis sit urna et aliquot. Vivamus facilisi diam et mi posuere malesuada nunc viverra nulla.'}
               </p>
             </div>
 
-            <div style={styles.divider}></div>
-
-            {/* Event Details */}
-            <div style={styles.detailsSection}>
-              <div style={styles.detailItem}>
-                <Calendar size={20} color="#666" />
-                <div>
-                  <div style={styles.detailLabel}>Date</div>
-                  <div style={styles.detailValue}>{event.date}</div>
+            {/* Additional Info Cards */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: '1.5rem',
+              marginTop: '2rem'
+            }}>
+              {/* Location Card */}
+              <div style={{
+                padding: '1.5rem',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px',
+                border: '1px solid #e0e0e0'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem', 
+                  marginBottom: '0.5rem' 
+                }}>
+                  <MapPin size={20} color="#2196f3" />
+                  <strong style={{ color: '#333' }}>Location</strong>
                 </div>
+                <p style={{ color: '#666', margin: 0 }}>
+                  {event.location || 'TBA'}
+                </p>
               </div>
 
-              <div style={styles.detailItem}>
-                <Clock size={20} color="#666" />
-                <div>
-                  <div style={styles.detailLabel}>Time</div>
-                  <div style={styles.detailValue}>{event.time}</div>
+              {/* Participants Card */}
+              <div style={{
+                padding: '1.5rem',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px',
+                border: '1px solid #e0e0e0'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem', 
+                  marginBottom: '0.5rem' 
+                }}>
+                  <Users size={20} color="#2196f3" />
+                  <strong style={{ color: '#333' }}>Participants</strong>
                 </div>
+                <p style={{ color: '#666', margin: 0 }}>
+                  {event.participants || 0} registered
+                </p>
               </div>
 
-              <div style={styles.detailItem}>
-                <MapPin size={20} color="#666" />
-                <div>
-                  <div style={styles.detailLabel}>Location</div>
-                  <div style={styles.detailValue}>{event.location}</div>
+              {/* Organizer Card */}
+              <div style={{
+                padding: '1.5rem',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px',
+                border: '1px solid #e0e0e0'
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.5rem', 
+                  marginBottom: '0.5rem' 
+                }}>
+                  <User size={20} color="#2196f3" />
+                  <strong style={{ color: '#333' }}>Organizer</strong>
                 </div>
-              </div>
-
-              <div style={styles.detailItem}>
-                <Users size={20} color="#666" />
-                <div>
-                  <div style={styles.detailLabel}>Attendees</div>
-                  <div style={styles.detailValue}>{event.attendees} registered</div>
-                </div>
-              </div>
-            </div>
-
-            <div style={styles.divider}></div>
-
-            {/* Action Buttons */}
-            <div style={styles.actionsSection}>
-              <button style={styles.registerBtn}>Register Now</button>
-              <div style={styles.secondaryActions}>
-                <button style={styles.secondaryBtn}><Bookmark size={16} /> Save</button>
-                <button style={styles.secondaryBtn}><Share2 size={16} /> Share</button>
+                <p style={{ color: '#666', margin: 0 }}>
+                  {event.author || 'Unknown'}
+                </p>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Confirmation Modal */}
+        {showConfirmModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '2rem',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+            }}>
+              {/* Event Image */}
+              <div style={{
+                width: '100%',
+                height: '200px',
+                backgroundImage: `url(${event.imageUrl || '/duck.jpg'})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                borderRadius: '8px',
+                marginBottom: '1.5rem'
+              }}></div>
+
+              {/* Event Title */}
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                color: '#333',
+                marginBottom: '1rem',
+                textAlign: 'center'
+              }}>
+                {event.title}
+              </h2>
+
+              {/* Sub Total */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '1rem 0',
+                borderTop: '1px solid #e0e0e0',
+                borderBottom: '1px solid #e0e0e0',
+                marginBottom: '1.5rem'
+              }}>
+                <span style={{ color: '#666', fontSize: '1.1rem' }}>Sub Total:</span>
+                <span style={{ color: '#4caf50', fontSize: '1.2rem', fontWeight: 'bold' }}>Free</span>
+              </div>
+
+              {/* Date */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem'
+              }}>
+                <span style={{ color: '#666', fontSize: '1rem' }}>Date</span>
+                <span style={{ color: '#4caf50', fontSize: '1rem', fontWeight: '600' }}>
+                  {event.date || 'TBA'}
+                </span>
+              </div>
+
+              {/* Confirm Button */}
+              <button
+                onClick={handleConfirmRegister}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  marginBottom: '0.5rem'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#45a049'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#4caf50'}
+              >
+                confirm
+              </button>
+
+              {/* Cancel Button */}
+              <button
+                onClick={handleCancelRegister}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  backgroundColor: 'transparent',
+                  color: '#666',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f5f5f5';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-// Styles
-const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f5f5f5' },
-  header: { backgroundColor: 'white', borderBottom: '1px solid #e0e0e0', padding: '20px 40px' },
-  backBtn: { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'transparent', border: 'none', color: '#666', fontSize: '16px', cursor: 'pointer' },
-  mainContent: { maxWidth: '1200px', margin: '0 auto', padding: '40px 20px', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '40px' },
-  leftColumn: { display: 'flex', flexDirection: 'column', gap: '24px' },
-  eventImage: { backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
-  image: { width: '100%', height: '400px', objectFit: 'cover' },
-  eventInfo: { backgroundColor: 'white', borderRadius: '12px', padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
-  categoryBadge: { display: 'inline-block', padding: '6px 16px', backgroundColor: '#e3f2fd', color: '#1976d2', borderRadius: '20px', fontSize: '14px', fontWeight: '600', marginBottom: '16px' },
-  eventTitle: { fontSize: '32px', fontWeight: '700', color: '#2c3e50', marginBottom: '24px', lineHeight: '1.3' },
-  authorSection: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' },
-  authorAvatar: { width: '48px', height: '48px', backgroundColor: '#ccc', borderRadius: '50%' },
-  authorName: { fontSize: '16px', fontWeight: '600', color: '#2c3e50' },
-  authorRole: { fontSize: '14px', color: '#666' },
-  divider: { height: '1px', backgroundColor: '#e0e0e0', margin: '24px 0' },
-  sectionTitle: { fontSize: '24px', fontWeight: '600', color: '#2c3e50', marginBottom: '16px' },
-  description: { fontSize: '16px', color: '#546e7a', lineHeight: '1.7', marginBottom: '24px' },
-  subTitle: { fontSize: '20px', fontWeight: '600', color: '#2c3e50', marginBottom: '12px' },
-  highlightsList: { listStyle: 'none', padding: 0, margin: 0 },
-  highlightItem: { fontSize: '16px', color: '#546e7a', marginBottom: '12px', paddingLeft: '24px', position: 'relative' },
-  rightColumn: { position: 'sticky', top: '20px', height: 'fit-content' },
-  detailsCard: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
-  progressSection: { marginBottom: '20px' },
-  progressHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' },
-  progressLabel: { fontSize: '14px', fontWeight: '600', color: '#666' },
-  progressCount: { fontSize: '14px', fontWeight: '700', color: '#2c3e50' },
-  progressBar: { width: '100%', height: '8px', backgroundColor: '#e0e0e0', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' },
-  progressFill: { height: '100%', background: 'linear-gradient(90deg, #1976d2 0%, #9c27b0 100%)', borderRadius: '4px', transition: 'width 0.3s ease' },
-  spotsRemaining: { fontSize: '12px', color: '#666', margin: 0 },
-  detailsSection: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  detailItem: { display: 'flex', gap: '12px' },
-  detailLabel: { fontSize: '14px', fontWeight: '600', color: '#2c3e50', marginBottom: '4px' },
-  detailValue: { fontSize: '14px', color: '#666' },
-  actionsSection: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  registerBtn: { width: '100%', padding: '14px', background: 'linear-gradient(90deg, #1976d2 0%, #9c27b0 100%)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' },
-  secondaryActions: { display: 'flex', gap: '12px' },
-  secondaryBtn: { flex: 1, padding: '10px', backgroundColor: 'transparent', border: '1px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
-};
 
 export default EventDetail;
