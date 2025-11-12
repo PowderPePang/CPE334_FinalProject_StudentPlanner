@@ -1,19 +1,52 @@
 import { useNavigate } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Home, Search, Bell, User, Inbox, Calendar,
+  Home as HomeIcon, Search, Bell, User, Inbox, Calendar,
   ChevronLeft, ChevronRight, ArrowLeft, Filter
 } from 'lucide-react';
-
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function PageHome() {
   const [showFilter, setShowFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const { logOut } = useUserAuth();
+  const { logOut, user } = useUserAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // State สำหรับ events จาก database
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ดึงข้อมูล events จาก Firestore
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const eventsRef = collection(db, 'events');
+        const q = query(eventsRef, orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        
+        const eventsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        setEvents(eventsData);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        setError("ไม่สามารถโหลดข้อมูล events ได้");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -24,39 +57,20 @@ function PageHome() {
     }
   };
 
-  const events = [
-    {
-      id: 1,
-      
-      title: 'How To Study Like A Duck With Dr.Boonyarit Event!',
-      category: 'Education',
-      progress: 45,
-      author: 'Prashant Kumar Singh',
-      role: 'Software Developer'
-    },
-    {
-      id: 2,
-      title: 'Sharing Session Event In CPE 10 Floor',
-      category: 'Business',
-      progress: 60,
-      author: 'Prashant Kumar Singh',
-      role: 'Software Developer'
-    },
-    {
-      id: 3,
-      title: "Beginner's Guide To Becoming A Professional Frontend Developer By KBTK Talking",
-      category: 'Technology',
-      progress: 75,
-      author: 'Prashant Kumar Singh',
-      role: 'Software Developer'
-    }
-  ];
+  const handleEventClick = (eventId) => {
+    navigate(`/event/${eventId}`);
+  };
+
+  // ฟังก์ชันสำหรับไปหน้า Notification
+  const handleNotificationClick = () => {
+    navigate('/notification');
+  };
 
   const filteredEvents = events.filter(event => {
     const matchesSearch =
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.category.toLowerCase().includes(searchQuery.toLowerCase());
+      event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.category?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory = selectedCategory === '' || event.category === selectedCategory;
 
@@ -67,6 +81,9 @@ function PageHome() {
     setSelectedCategory(category === selectedCategory ? '' : category);
     setShowFilter(false);
   };
+
+  // ดึง categories ที่ไม่ซ้ำกันจาก events
+  const categories = [...new Set(events.map(event => event.category).filter(Boolean))];
 
   return (
     <div className="container">
@@ -79,13 +96,23 @@ function PageHome() {
 
         <div className="overview-title">OVERVIEW</div>
 
-        <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-          <Home /> Dashboard
+        <button 
+          className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <HomeIcon /> Dashboard
         </button>
-        <button className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => setActiveTab('inbox')}>
+        <button 
+          className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('inbox')}
+        >
           <Inbox /> Inbox
         </button>
-        <button className={`nav-item ${activeTab === 'notification' ? 'active' : ''}`} onClick={() => setActiveTab('notification')}>
+        {/* เพิ่มการลิงก์ไปหน้า Notification */}
+        <button 
+          className={`nav-item ${activeTab === 'notification' ? 'active' : ''}`} 
+          onClick={handleNotificationClick}
+        >
           <Bell /> Notification
         </button>
       </div>
@@ -100,7 +127,10 @@ function PageHome() {
           <div className="header-right">
             <button className="logout-btn" onClick={handleLogout}>Log out</button>
             <button className="profile-btn"><User className="profile-icon" /></button>
-            <button className="bell-btn"><Bell className="bell-icon" /></button>
+            {/* เพิ่มการลิงก์ที่ไอคอนกระดิ่ง */}
+            <button className="bell-btn" onClick={handleNotificationClick}>
+              <Bell className="bell-icon" />
+            </button>
           </div>
         </div>
 
@@ -120,18 +150,40 @@ function PageHome() {
           </button>
           {showFilter && (
             <div className="filter-dropdown">
-              {['Technology', 'Business', 'Education'].map(category => (
+              {categories.length > 0 ? (
+                categories.map(category => (
+                  <div
+                    key={category}
+                    onClick={() => handleCategoryFilter(category)}
+                    style={{
+                      cursor: 'pointer',
+                      padding: '0.5rem',
+                      fontWeight: selectedCategory === category ? 'bold' : 'normal',
+                      backgroundColor: selectedCategory === category ? '#f0f0f0' : 'transparent'
+                    }}
+                  >
+                    {category} {selectedCategory === category && '✓'}
+                  </div>
+                ))
+              ) : (
+                <div style={{ padding: '0.5rem', color: '#999' }}>
+                  No categories available
+                </div>
+              )}
+              {selectedCategory && (
                 <div
-                  key={category}
-                  onClick={() => handleCategoryFilter(category)}
+                  onClick={() => setSelectedCategory('')}
                   style={{
                     cursor: 'pointer',
-                    fontWeight: selectedCategory === category ? 'bold' : 'normal'
+                    padding: '0.5rem',
+                    color: '#007bff',
+                    borderTop: '1px solid #e0e0e0',
+                    marginTop: '0.5rem'
                   }}
                 >
-                  {category} {selectedCategory === category && '✓'}
+                  Clear filter
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
@@ -152,7 +204,22 @@ function PageHome() {
             </div>
           </div>
 
-          {(searchQuery || selectedCategory) && (
+          {/* Loading State */}
+          {loading && (
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+              <p>กำลังโหลดข้อมูล...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#ff0000' }}>
+              <p>{error}</p>
+            </div>
+          )}
+
+          {/* Filter Info */}
+          {!loading && (searchQuery || selectedCategory) && (
             <div style={{ marginBottom: '1rem', color: '#666' }}>
               Found {filteredEvents.length} event(s)
               {searchQuery && <> matching "{searchQuery}"</>}
@@ -176,40 +243,48 @@ function PageHome() {
             </div>
           )}
 
-          {filteredEvents.length > 0 ? (
-            <div className="events-grid">
-              {filteredEvents.map(event => (
-                <article key={event.id} className="event-card">
-                  <div
-                    className="event-image"
-                    style={{
-                      backgroundImage: `url(/duck.jpg)`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center"
-                    }}
-                  />
-                  <div className="event-content">
-                    <span className="event-tag">{event.category}</span>
-                    <div className="event-title">{event.title}</div>
-                    <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: `${event.progress}%` }}></div>
-                    </div>
-                    <div className="event-author">
-                      <div className="author-avatar"></div>
-                      <div className="author-info">
-                        <div className="author-name">{event.author}</div>
-                        <div className="author-role">{event.role}</div>
+          {/* Events Grid */}
+          {!loading && !error && (
+            filteredEvents.length > 0 ? (
+              <div className="events-grid">
+                {filteredEvents.map(event => (
+                  <article 
+                    key={event.id} 
+                    className="event-card"
+                    onClick={() => handleEventClick(event.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div
+                      className="event-image"
+                      style={{
+                        backgroundImage: `url(${event.imageUrl || '/duck.jpg'})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center"
+                      }}
+                    />
+                    <div className="event-content">
+                      <span className="event-tag">{event.category}</span>
+                      <div className="event-title">{event.title}</div>
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: `${event.progress || 0}%` }}></div>
+                      </div>
+                      <div className="event-author">
+                        <div className="author-avatar"></div>
+                        <div className="author-info">
+                          <div className="author-name">{event.author || 'Unknown'}</div>
+                          <div className="author-role">{event.role || 'Organizer'}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-              <h3>No events found</h3>
-              <p>Try adjusting your search or filters</p>
-            </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+                <h3>No events found</h3>
+                <p>Try adjusting your search or filters</p>
+              </div>
+            )
           )}
         </div>
       </div>

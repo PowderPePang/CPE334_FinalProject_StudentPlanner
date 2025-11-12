@@ -7,6 +7,9 @@ import Login from "./components/Login.jsx";
 import Register from "./components/Register.jsx";
 import ProtectedRoute from "./auth/ProtectedRoute.jsx";
 import Unauthorized401 from "./components/Unauthorized401.jsx";
+import EventDetail from "./components/EventDetail.jsx";
+import Notification from "./components/Notification.jsx";
+import EventConfirmed from "./components/EventConfirm.jsx";
 import EventCreate from "./components/EventCreate.jsx";
 import OrganizerHome from "./components/OrganizerHome.jsx";
 import EventEdit from "./components/EventEdit.jsx";
@@ -46,6 +49,18 @@ const router = createBrowserRouter([
     {
         path: "/unauthorized401",
         element: <Unauthorized401 />,
+    },
+    {
+        path: "/event/:eventId",
+        element: <EventDetail />,
+    },
+    {
+        path: "/notification",
+        element: <Notification />,
+    },
+    {
+        path: "/event/:eventId/confirmed",
+        element: <EventConfirmed />,
     },
     {
         path: "/home",
