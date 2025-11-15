@@ -8,7 +8,7 @@ function App() {
             {/* Header/Navigation */}
             <header style={styles.navbar}>
                 <div style={styles.navBrand}>
-                    <div style={styles.logo}>YP</div>
+                    <img src="/Logo.svg" alt="Logo" style={styles.logo} />
                     <span style={styles.brandName}>Yes we can Planner</span>
                 </div>
                 <nav style={styles.navLinks}>
@@ -89,16 +89,9 @@ const styles = {
         gap: "12px",
     },
     logo: {
-        width: "45px",
-        height: "45px",
-        backgroundColor: "#EA580C",
-        borderRadius: "50%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "white",
-        fontWeight: "bold",
-        fontSize: "16px",
+    width: "70px",
+    height: "70px",
+    objectFit: "contain",
     },
     brandName: {
         fontSize: "20px",
