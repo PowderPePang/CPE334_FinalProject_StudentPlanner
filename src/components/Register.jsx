@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
-import { collection, addDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import {
+    collection,
+    addDoc,
+    doc,
+    setDoc,
+    serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import "../style/Register.css";
 
@@ -22,53 +28,59 @@ function Register() {
         e.preventDefault();
         setError("");
 
-        console.log("=== 🚀 REGISTRATION START ===");
+        console.log("=== REGISTRATION START ===");
 
         try {
-            console.log("🔵 [1] Creating Auth user...");
+            console.log("[1] Creating Auth user...");
             const userCredential = await signUp(email, password);
             const user = userCredential.user;
-            
-            console.log("✅ [1] Auth Success! UID:", user.uid);
 
-            console.log("🔵 [2] Saving to Firestore...");
-            console.log("📍 Collection: users");
-            console.log("📍 Document ID:", user.uid);
-            console.log("📦 Data:", {
+            console.log("[1] Auth Success! UID:", user.uid);
+
+            console.log("[2] Saving to Firestore...");
+            console.log("Collection: users");
+            console.log("Document ID:", user.uid);
+            console.log("Data:", {
+                uid: user.uid,
                 email: user.email,
-                displayName: `${firstName} ${lastName}`,
+                firstName: firstName,
+                lastName: lastName,
                 photoURL: null,
                 phone: phone,
                 role: role,
-                isActive: true
+                isActive: true,
             });
 
             await setDoc(doc(db, "users", user.uid), {
+                uid: user.uid, // Store the user's UID
                 email: user.email,
-                displayName: `${firstName} ${lastName}`,
+                firstName: firstName,
+                lastName: lastName,
                 photoURL: null,
                 phone: phone,
                 role: role,
                 isActive: true,
                 createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
+                updatedAt: serverTimestamp(),
             });
-            
-            console.log("✅ [2] Firestore Success!");
-            console.log("=== ✨ COMPLETE ===");
-            
+            alert("Sign up successfully!");
+
+            console.log("[2] Firestore Success!");
+            console.log("=== COMPLETE ===");
+
             navigate("/");
-            
         } catch (err) {
-            console.error("=== ❌ ERROR DETAILS ===");
-            console.error("Stage:", err.code?.includes('auth/') ? 'Authentication' : 'Firestore');
+            console.error("=== ERROR DETAILS ===");
+            console.error(
+                "Stage:",
+                err.code?.includes("auth/") ? "Authentication" : "Firestore"
+            );
             console.error("Code:", err.code);
             console.error("Message:", err.message);
             console.error("Full error:", err);
             setError(err.message);
         }
     };
-
 
     return (
         <div className="register-container">
@@ -140,7 +152,7 @@ function Register() {
                             required
                         />
                     </div>
-                    
+
                     {/* Role Selection */}
                     <div className="mb-4">
                         <label className="form-label">I am a...</label>
@@ -154,7 +166,8 @@ function Register() {
                             <option value="organizer">Event Organizer</option>
                         </select>
                         <small className="form-text text-muted">
-                            Students can register for events. Organizers can create and manage events.
+                            Students can register for events. Organizers can
+                            create and manage events.
                         </small>
                     </div>
 

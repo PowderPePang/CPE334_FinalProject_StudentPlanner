@@ -1,8 +1,9 @@
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
+import { doc, getDoc } from "firebase/firestore";
 import "../style/Login.css";
 
 function Login() {
@@ -11,32 +12,73 @@ function Login() {
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
+    const [loading, setLoading] = useState(false);
     const { logIn } = useUserAuth();
 
     const googleProvider = new GoogleAuthProvider();
 
     let navigate = useNavigate();
 
+    const navigateByRole = async (user) => {
+        try {
+            // Get user document from Firestore
+            const userDocRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                const userRole = userData.role;
+
+                // Navigate based on role
+                if (userRole === "organizer") {
+                    navigate("/organizerHome");
+                } else if (userRole === "student") {
+                    navigate("/home");
+                } else {
+                    // Default to student home if role is not specified
+                    navigate("/home");
+                }
+            } else {
+                // If user document doesn't exist, default to student home
+                console.warn(
+                    "User document not found, defaulting to student home"
+                );
+                navigate("/home");
+            }
+        } catch (err) {
+            console.error("Error fetching user role:", err);
+            // Default to student home on error
+            navigate("/home");
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        setLoading(true);
         try {
-            await logIn(email, password);
-            navigate("/home");
+            const userCredential = await logIn(email, password);
+            await navigateByRole(userCredential.user);
         } catch (err) {
             setError(err.message);
             console.log(err);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleGoogleLogin = async () => {
+        setError("");
+        setLoading(true);
         try {
-            await signInWithPopup(auth, googleProvider);
-            navigate("/home");
+            const result = await signInWithPopup(auth, googleProvider);
+            await navigateByRole(result.user);
             console.log("Done");
         } catch (err) {
             console.log(err);
             setError(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -166,8 +208,12 @@ function Login() {
                         </Link>
                     </div>
 
-                    <button type="submit" className="btn btn-login w-100">
-                        Log in
+                    <button
+                        type="submit"
+                        className="btn btn-login w-100"
+                        disabled={loading}
+                    >
+                        {loading ? "Logging in..." : "Log in"}
                     </button>
                 </form>
 

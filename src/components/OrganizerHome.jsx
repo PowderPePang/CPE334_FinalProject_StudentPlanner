@@ -117,6 +117,10 @@ function OrganizerHome() {
         }
     };
 
+    const handleProfileClick = () => {
+        navigate("/profile");
+    };
+
     const handleCategoryFilter = (category) => {
         setSelectedCategory(category === selectedCategory ? "" : category);
         setShowFilter(false);
@@ -460,7 +464,10 @@ function OrganizerHome() {
                         <button className="logout-btn" onClick={handleLogout}>
                             Log out
                         </button>
-                        <button className="profile-btn">
+                        <button
+                            className="profile-btn"
+                            onClick={handleProfileClick}
+                        >
                             <User className="profile-icon" />
                         </button>
                         <button className="bell-btn">
