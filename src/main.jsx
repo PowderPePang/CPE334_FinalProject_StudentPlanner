@@ -5,6 +5,7 @@ import App from "./App.jsx";
 import Home from "./components/Home.jsx";
 import Login from "./components/Login.jsx";
 import Register from "./components/Register.jsx";
+import About from "./components/About.jsx"; // ✅ เพิ่ม import About
 import ProtectedRoute from "./auth/ProtectedRoute.jsx";
 import Unauthorized401 from "./components/Unauthorized401.jsx";
 import EventDetail from "./components/EventDetail.jsx";
@@ -15,6 +16,7 @@ import EventCreate from "./components/EventCreate.jsx";
 import OrganizerHome from "./components/OrganizerHome.jsx";
 import EventEdit from "./components/EventEdit.jsx";
 import ForgotPassword from "./components/ForgotPassword.jsx";
+import ForPartner from "./components/ForPartner.jsx";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -27,6 +29,10 @@ const router = createBrowserRouter([
     {
         path: "/",
         element: <App />,
+    },
+    {
+        path: "/about", // ✅ เพิ่ม route สำหรับ About
+        element: <About />,
     },
     {
         path: "/login",
@@ -79,6 +85,10 @@ const router = createBrowserRouter([
                 <Home />
             </ProtectedRoute>
         ),
+    },
+    {
+    path: "/partner",
+    element: <ForPartner />,
     },
 ]);
 

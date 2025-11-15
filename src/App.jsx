@@ -12,15 +12,15 @@ function App() {
                     <span style={styles.brandName}>Yes we can Planner</span>
                 </div>
                 <nav style={styles.navLinks}>
-                    <a href="#home" style={styles.navLink}>
+                    <Link to="/" style={styles.navLink}>
                         Home
-                    </a>
-                    <a href="#parents" style={styles.navLink}>
+                    </Link>
+                    <Link to="/partner" style={styles.navLink}>
                         For Partner
-                    </a>
-                    <a href="#about" style={styles.navLink}>
+                    </Link>
+                    <Link to="/about" style={styles.navLink}>
                         About
-                    </a>
+                    </Link>
                     <a href="#tips" style={styles.navLink}>
                         Study Tips
                     </a>
@@ -45,9 +45,9 @@ function App() {
                     </h1>
                     <p style={styles.heroDescription}>
                         Many students struggle with procrastination, missed
-                        deadlines, and academic stress — Yes We Can Planner is
+                        deadlines, and academic stress – Yes We Can Planner is
                         here to change that. Designed to meet the real demands
-                        of student life, it’s the smarter way to plan, stay
+                        of student life, it's the smarter way to plan, stay
                         focused, and achieve success.
                     </p>
                     <Link to="/register" style={styles.btnGetStarted}>
@@ -89,9 +89,9 @@ const styles = {
         gap: "12px",
     },
     logo: {
-    width: "70px",
-    height: "70px",
-    objectFit: "contain",
+        width: "70px",
+        height: "70px",
+        objectFit: "contain",
     },
     brandName: {
         fontSize: "20px",
