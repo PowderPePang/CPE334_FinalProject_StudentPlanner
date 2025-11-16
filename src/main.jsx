@@ -17,6 +17,7 @@ import OrganizerHome from "./components/OrganizerHome.jsx";
 import EventEdit from "./components/EventEdit.jsx";
 import ForgotPassword from "./components/ForgotPassword.jsx";
 import ForPartner from "./components/ForPartner.jsx";
+import StudyTips from "./components/StudyTips.jsx";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -89,6 +90,10 @@ const router = createBrowserRouter([
     {
     path: "/partner",
     element: <ForPartner />,
+    },
+    {
+    path: "/study-tips",
+    element: <StudyTips />,
     },
 ]);
 

@@ -17,11 +17,11 @@ function ForPartner() {
                         For Partner
                     </Link>
                     <Link to="/about" style={styles.navLink}>
-                        About
+                         About
                     </Link>
-                    <a href="#tips" style={styles.navLink}>
+                    <Link to="/study-tips" style={styles.navLink}>
                         Study Tips
-                    </a>
+                    </Link>
                 </nav>
                 <div style={styles.navActions}>
                     <Link to="/register" style={styles.btnSignup}>

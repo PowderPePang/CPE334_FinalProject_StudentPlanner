@@ -10,19 +10,19 @@ function About() {
                     <span style={styles.brandName}>Yes we can Planner</span>
                 </div>
                 <nav style={styles.navLinks}>
-                    <Link to="/" style={styles.navLink}>
-                        Home
-                    </Link>
-                    <a href="#partners" style={styles.navLink}>
-                        For Partner
-                    </a>
-                    <a href="#about" style={styles.navLink}>
-                        About
-                    </a>
-                    <a href="#tips" style={styles.navLink}>
-                        Study Tips
-                    </a>
-                </nav>
+                                    <Link to="/" style={styles.navLink}>
+                                        Home
+                                    </Link>
+                                    <Link to="/partner" style={styles.navLink}>
+                                        For Partner
+                                    </Link>
+                                    <Link to="/about" style={styles.navLink}>
+                                        About
+                                    </Link>
+                                    <Link to="/study-tips" style={styles.navLink}>
+                                        Study Tips
+                                    </Link>
+                                </nav>
                 <div style={styles.navActions}>
                     <Link to="/register" style={styles.btnSignup}>
                         Sign Up
