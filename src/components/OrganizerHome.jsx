@@ -4,10 +4,12 @@ import { useUserAuth } from "../context/UserAuthContext";
 import {
     collection,
     getDocs,
+    getDoc,
     deleteDoc,
     doc,
     query,
     where,
+    orderBy,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import {
@@ -36,37 +38,12 @@ function OrganizerHome() {
     const [loading, setLoading] = useState(true);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [showEventMenu, setShowEventMenu] = useState(null);
-    const { logOut, user } = useUserAuth();
+    const [userProfile, setUserProfile] = useState(null);
+    const [profileLoading, setProfileLoading] = useState(true); // ✅ เพิ่ม loading state
+
+    const { logOut, user, loading: authLoading } = useUserAuth();
     const navigate = useNavigate();
-
-    useEffect(() => {
-        loadEvents();
-    }, []);
-
-    useEffect(() => {
-        filterEvents();
-    }, [events, searchQuery, selectedCategory]);
-
-    const loadEvents = async () => {
-        try {
-            setLoading(true);
-            const eventsRef = collection(db, "events");
-            const q = query(eventsRef);
-            const querySnapshot = await getDocs(q);
-
-            const eventsData = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-
-            setEvents(eventsData);
-        } catch (err) {
-            console.error("Error loading events:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    
     const filterEvents = () => {
         let filtered = events;
 
@@ -94,15 +71,143 @@ function OrganizerHome() {
         setFilteredEvents(filtered);
     };
 
+    const loadEvents = async () => {
+            if (!user) {
+                console.log("⏭️ Skipping events load - no user");
+                return;
+            }
+
+            try {
+                setLoading(true);
+                console.log("🔵 Loading events for organizer:", user.uid);
+
+                const eventsRef = collection(db, "events");
+
+                // ✅ Filter เฉพาะ events ของตัวเอง!
+                const q = query(
+                    eventsRef,
+                    where("organizerId", "==", user.uid),
+                    orderBy("createdAt", "desc")
+                );
+                const querySnapshot = await getDocs(q);
+
+                const eventsData = querySnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                
+                console.log("✅ My Events loaded:", eventsData.length);
+                // console.log("Events data:", eventsData);
+
+                setEvents(eventsData);
+
+            } catch (err) {
+                console.error("❌ Error loading events:", err);
+                // console.error("Error code:", err.code);
+                // console.error("Error message:", err.message);
+
+                // ถ้า error เกี่ยวกับ index
+                if (err.code === "failed-precondition") {
+                    alert("Please create a Firestore index. Check the console for the link.");
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+
+    // ✅ เพิ่ม: ดึง User Profile และตรวจสอบ role
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            // ❌ ถ้าไม่มี user หลังจากโหลดเสร็จแล้ว
+            if (!user) {
+                console.log("⚠️ No user after loading - redirecting to login");
+                navigate("/login");
+                return;
+            }
+
+            try {
+                console.log("🔵 Fetching user profile for:", user.uid);
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+
+                if (userDoc.exists()) {
+                    const profile = userDoc.data();
+                    console.log("✅ User Profile:", profile);
+                    setUserProfile(profile);
+
+                    // ✅ ตรวจสอบว่าเป็น organizer จริงไหม
+                    if (profile.role !== "organizer") {
+                        console.log("❌ Access denied - not an organizer");
+                        alert("Access denied. This page is for organizers only!");
+                        navigate("/home");
+                    }
+                } else {
+                    console.log("❌ User profile not found");
+                    navigate("/login");
+                }
+            } catch (err) {
+                console.error("❌ Error fetching user profile:", err);
+                navigate("/login");
+            } finally {
+                setProfileLoading(false);
+            }
+        };
+
+        fetchUserProfile();
+    }, [user, navigate]);
+
+    // ✅ แก้ไข: Load events เฉพาะของตัวเอง
+    useEffect(() => {
+        if (user && userProfile?.role === "organizer") {
+            loadEvents();
+        }
+    }, [user, userProfile]);
+
+    useEffect(() => {
+        filterEvents();
+    }, [events, searchQuery, selectedCategory]);
+
+    if (profileLoading) {
+        return (
+            <div style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100vh",
+                fontSize: "1.5rem",
+                color: "#666"
+            }}>
+                <div>⏳ Loading...</div>
+            </div>
+        );
+    }
+
+    // ✅ ถ้าไม่มี user หรือไม่ใช่ organizer (safeguard)
+    if (!user || !userProfile || userProfile.role !== "organizer") {
+        return null; // จะถูก redirect แล้วใน useEffect
+    }
+
+    // ✅ แก้ไข: ตรวจสอบ ownership ก่อนลบ
     const handleDeleteEvent = async (eventId) => {
+        const event = events.find(e => e.id === eventId);
+
+        // ✅ ตรวจสอบว่าเป็นเจ้าของ event จริงไหม
+        if (event.organizerId !== user.uid) {
+            alert("You can only delete your own events!");
+            console.log("❌ Delete denied - not the owner");
+            return;
+        }
+
         if (window.confirm("Are you sure you want to delete this event?")) {
             try {
+                console.log("🗑️ Deleting event:", eventId);
                 await deleteDoc(doc(db, "events", eventId));
                 setEvents(events.filter((event) => event.id !== eventId));
                 setShowEventMenu(null);
+                console.log("✅ Event deleted successfully");
                 alert("Event deleted successfully!");
             } catch (err) {
-                console.error("Error deleting event:", err);
+                console.error("❌ Error deleting event:", err);
                 alert("Failed to delete event");
             }
         }
@@ -135,7 +240,11 @@ function OrganizerHome() {
 
     const getUpcomingEvents = () => {
         const today = new Date();
-        return events.filter((event) => new Date(event.date) >= today).length;
+        return events.filter((event) => {
+            if (!event.startDate) return false;
+            const eventDate = event.startDate.toDate ? event.startDate.toDate() : new Date(event.startDate);
+            return eventDate >= today;
+        }).length;
     };
 
     const categoryOptions = [
@@ -260,13 +369,13 @@ function OrganizerHome() {
                                             {event.category || "General"}
                                         </span>
                                         <span className="event-meta-text">
-                                            {event.date} • {event.startTime} -{" "}
-                                            {event.endTime}
+                                            {event.startDate && 
+                                                new Date(event.startDate.toDate ? event.startDate.toDate() : event.startDate)
+                                                    .toLocaleDateString('th-TH')}
                                         </span>
                                     </div>
                                     <div className="event-item-location">
-                                        📍 {event.location}{" "}
-                                        {event.floor && `- ${event.floor}`}
+                                        📍 {event.location || "TBA"}
                                     </div>
                                 </div>
 
@@ -415,7 +524,29 @@ function OrganizerHome() {
                     </div>
                     <div className="logo-text">ORGANIZER</div>
                 </div>
-
+                {/* ✅ แสดงชื่อ organizer */}
+                {userProfile && (
+                    <div style={{ 
+                        padding: "1rem",
+                        borderBottom: "1px solid #e0e0e0",
+                        marginBottom: "1rem",
+                        backgroundColor: "#f8f9fa"
+                    }}>
+                        <div style={{ 
+                            fontWeight: "600", 
+                            marginBottom: "0.25rem",
+                            color: "#2d3748"
+                        }}>
+                            {userProfile.displayName}
+                        </div>
+                        <div style={{ 
+                            fontSize: "0.85rem", 
+                            color: "#666"
+                        }}>
+                            {userProfile.email}
+                        </div>
+                    </div>
+                )}
                 <div className="overview-title">MENU</div>
 
                 <button

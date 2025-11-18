@@ -13,7 +13,15 @@ import {
     ArrowLeft,
     Filter,
 } from "lucide-react";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { 
+    collection, 
+    getDocs, 
+    getDoc, 
+    doc, 
+    query, 
+    orderBy, 
+    where 
+} from "firebase/firestore";
 import { db } from "../firebase";
 
 function PageHome() {
@@ -29,32 +37,88 @@ function PageHome() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ดึงข้อมูล events จาก Firestore
+    const [userProfile, setUserProfile] = useState(null);
+    const [myRegistrations, setMyRegistrations] = useState([]);
+
+    // ✅ ดึง User Profile จาก Firestore
     useEffect(() => {
-        const fetchEvents = async () => {
+        const fetchUserProfile = async () => {
+            if (!user) return;
+
             try {
-                setLoading(true);
-                const eventsRef = collection(db, "events");
-                const q = query(eventsRef, orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
-
-                const eventsData = querySnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
-
-                setEvents(eventsData);
-                setError(null);
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    setUserProfile(userDoc.data());
+                    console.log("User Profile:", userDoc.data());
+                }
             } catch (err) {
-                console.error("Error fetching events:", err);
-                setError("ไม่สามารถโหลดข้อมูล events ได้");
-            } finally {
-                setLoading(false);
+                console.error("Error fetching user profile:", err);
             }
         };
 
-        fetchEvents();
-    }, []);
+        fetchUserProfile();
+    }, [user]);
+
+    // ดึงข้อมูล events จาก Firestore
+    useEffect(() => {
+    const fetchEvents = async () => {
+        try {
+            setLoading(true);
+            const eventsRef = collection(db, "events");
+
+            // ✅ ใช้แค่ orderBy อย่างเดียว (ไม่ต้อง index)
+            const q = query(eventsRef, orderBy("createdAt", "desc"));
+
+            const querySnapshot = await getDocs(q);
+
+            const eventsData = querySnapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            console.log("✅ Events loaded:", eventsData.length);
+            setEvents(eventsData);
+            setError(null);
+        } catch (err) {
+            console.error("❌ Error fetching events:", err);
+            console.error("Error code:", err.code);
+            console.error("Error message:", err.message);
+            setError(`ไม่สามารถโหลดข้อมูล events ได้: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchEvents();
+}, []);
+
+    // ดึงข้อมูล Registrations (สำหรับ Students)
+    useEffect(() => {
+        const fetchMyRegistrations = async () => {
+            if (!user || userProfile?.role !== "student") return;
+
+            try {
+                const registrationsRef = collection(db, "registrations");
+                const q = query(
+                    registrationsRef, 
+                    where("userId", "==", user.uid),
+                    where("status", "in", ["registered", "checked-in"])
+                );
+                const querySnapshot = await getDocs(q);
+
+                const registrations = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                setMyRegistrations(registrations);
+            } catch (err) {
+                console.error("Error fetching registrations:", err);
+            }
+        };
+
+        fetchMyRegistrations();
+    }, [user, userProfile]);
 
     const handleLogout = async () => {
         try {
@@ -152,6 +216,30 @@ function PageHome() {
                         </span>
                     </div>
                     <div className="header-right">
+                        {/* ✅ แสดงชื่อและ role */}
+                        {userProfile && (
+                            <div style={{ 
+                                display: "flex", 
+                                alignItems: "center", 
+                                gap: "0.5rem", 
+                                marginRight: "1rem" 
+                            }}>
+                                <span style={{ fontWeight: "600", color: "#2d3748" }}>
+                                    {userProfile.displayName}
+                                </span>
+                                <span style={{ 
+                                    fontSize: "0.85rem",
+                                    padding: "0.25rem 0.5rem",
+                                    backgroundColor: userProfile.role === "organizer" ? "#e3f2fd" : "#f3e5f5",
+                                    color: userProfile.role === "organizer" ? "#1976d2" : "#7b1fa2",
+                                    borderRadius: "4px",
+                                    fontWeight: "500"
+                                }}>
+                                    {userProfile.role === "organizer" ? "🎯 Organizer" : "👤 Student"}
+                                </span>
+                            </div>
+                        )}
+
                         <button className="logout-btn" onClick={handleLogout}>
                             Log out
                         </button>
@@ -244,6 +332,138 @@ function PageHome() {
 
                 {/* Content */}
                 <div className="content">
+                    {/* ✅ ปุ่ม Create Event (สำหรับ Organizer) */}
+                    {userProfile?.role === "organizer" && (
+                        <div style={{ 
+                            marginBottom: "1.5rem", 
+                            display: "flex", 
+                            justifyContent: "flex-end" 
+                        }}>
+                            <button 
+                                onClick={() => navigate("/organizerHome")}
+                                style={{
+                                    padding: "0.75rem 1.5rem",
+                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    fontSize: "1rem",
+                                    fontWeight: "600",
+                                    cursor: "pointer",
+                                    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+                                    transition: "all 0.3s ease"
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.transform = "translateY(-2px)";
+                                    e.target.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.4)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = "translateY(0)";
+                                    e.target.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.3)";
+                                }}
+                            >
+                                📊 Go to Organizer Dashboard
+                            </button>
+                        </div>
+                    )}
+
+                    {/* ✅ My Registered Events (สำหรับ Student) */}
+                    {userProfile?.role === "student" && (
+                        <div style={{ 
+                            marginBottom: "2rem",
+                            padding: "1.5rem",
+                            background: "linear-gradient(135deg, #f8f9ff 0%, #fff5f8 100%)",
+                            borderRadius: "12px",
+                            border: "2px solid #667eea"
+                        }}>
+                            <h3 style={{ 
+                                margin: "0 0 1rem 0",
+                                fontSize: "1.25rem",
+                                fontWeight: "700",
+                                color: "#2d3748"
+                            }}>
+                                📅 My Registered Events {myRegistrations.length > 0 && `(${myRegistrations.length})`}
+                            </h3>
+                    
+                            {/* ✅ แสดง Empty State ถ้ายังไม่มี registrations */}
+                            {myRegistrations.length === 0 ? (
+                                <div style={{
+                                    textAlign: "center",
+                                    padding: "2rem",
+                                    color: "#666"
+                                }}>
+                                    <p style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>
+                                        You haven't registered for any events yet
+                                    </p>
+                                    <p style={{ fontSize: "0.875rem", color: "#999" }}>
+                                        Browse events below and register to see them here!
+                                    </p>
+                                </div>
+                            ) : (
+                                <div style={{ 
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                                    gap: "1rem"
+                                }}>
+                                    {myRegistrations.map((registration) => (
+                                        <div 
+                                            key={registration.id}
+                                            onClick={() => navigate(`/event/${registration.eventId}`)}
+                                            style={{
+                                                background: "white",
+                                                borderRadius: "8px",
+                                                padding: "1rem",
+                                                cursor: "pointer",
+                                                transition: "all 0.3s ease",
+                                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.transform = "translateY(-4px)";
+                                                e.currentTarget.style.boxShadow = "0 4px 16px rgba(102, 126, 234, 0.3)";
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.transform = "translateY(0)";
+                                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
+                                            }}
+                                        >
+                                            <h4 style={{
+                                                fontSize: "1rem",
+                                                fontWeight: "600",
+                                                color: "#2d3748",
+                                                margin: "0 0 0.5rem 0"
+                                            }}>
+                                                {registration.eventTitle}
+                                            </h4>
+                                            <p style={{
+                                                fontSize: "0.85rem",
+                                                color: "#666",
+                                                margin: "0 0 0.5rem 0"
+                                            }}>
+                                                🗓️ {registration.eventDate && 
+                                                    new Date(registration.eventDate.toDate()).toLocaleDateString('th-TH', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric'
+                                                    })}
+                                            </p>
+                                            <span style={{
+                                                display: "inline-block",
+                                                padding: "0.25rem 0.5rem",
+                                                borderRadius: "4px",
+                                                fontSize: "0.85rem",
+                                                fontWeight: "500",
+                                                backgroundColor: registration.checkedIn ? "#4caf50" : "#ff9800",
+                                                color: "white"
+                                            }}>
+                                                {registration.checkedIn ? "✅ Checked In" : "⏳ Registered"}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}   
+
                     <div className="banner">
                         <h2>Don't miss a single event!</h2>
                         <p>Join more events!</p>
@@ -317,26 +537,20 @@ function PageHome() {
                     )}
 
                     {/* Events Grid */}
-                    {!loading &&
-                        !error &&
-                        (filteredEvents.length > 0 ? (
+                    {!loading && !error && (
+                        filteredEvents.length > 0 ? (
                             <div className="events-grid">
                                 {filteredEvents.map((event) => (
                                     <article
                                         key={event.id}
                                         className="event-card"
-                                        onClick={() =>
-                                            handleEventClick(event.id)
-                                        }
+                                        onClick={() => handleEventClick(event.id)}
                                         style={{ cursor: "pointer" }}
                                     >
                                         <div
                                             className="event-image"
                                             style={{
-                                                backgroundImage: `url(${
-                                                    event.imageUrl ||
-                                                    "/duck.jpg"
-                                                })`,
+                                                backgroundImage: `url(${event.imageURL || "/duck.jpg"})`,
                                                 backgroundSize: "cover",
                                                 backgroundPosition: "center",
                                             }}
@@ -352,22 +566,34 @@ function PageHome() {
                                                 <div
                                                     className="progress-fill"
                                                     style={{
-                                                        width: `${
-                                                            event.progress || 0
-                                                        }%`,
+                                                        width: `${((event.currentParticipants || 0) / event.capacity) * 100}%`,
                                                     }}
                                                 ></div>
                                             </div>
+
+                                            {/* ✅ เพิ่มแสดงข้อมูล location และ participants */}
+                                            <div style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                marginTop: "0.5rem",
+                                                paddingTop: "0.5rem",
+                                                borderTop: "1px solid #e0e0e0",
+                                                fontSize: "0.85rem",
+                                                color: "#666"
+                                            }}>
+                                                <div>📍 {event.location}</div>
+                                                <div>👥 {event.currentParticipants || 0}/{event.capacity}</div>
+                                            </div>
+
                                             <div className="event-author">
                                                 <div className="author-avatar"></div>
                                                 <div className="author-info">
                                                     <div className="author-name">
-                                                        {event.author ||
-                                                            "Unknown"}
+                                                        {event.organizerName || "Unknown"}
                                                     </div>
                                                     <div className="author-role">
-                                                        {event.role ||
-                                                            "Organizer"}
+                                                        Organizer
                                                     </div>
                                                 </div>
                                             </div>
