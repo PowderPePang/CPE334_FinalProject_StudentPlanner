@@ -13,14 +13,14 @@ import {
     ArrowLeft,
     Filter,
 } from "lucide-react";
-import { 
-    collection, 
-    getDocs, 
-    getDoc, 
-    doc, 
-    query, 
-    orderBy, 
-    where 
+import {
+    collection,
+    getDocs,
+    getDoc,
+    doc,
+    query,
+    orderBy,
+    where,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -61,92 +61,96 @@ function PageHome() {
 
     // ดึงข้อมูล events จาก Firestore
     useEffect(() => {
-    const fetchEvents = async () => {
-        try {
-            setLoading(true);
-            const eventsRef = collection(db, "events");
+        const fetchEvents = async () => {
+            try {
+                setLoading(true);
+                const eventsRef = collection(db, "events");
 
-            // ✅ ใช้แค่ orderBy อย่างเดียว (ไม่ต้อง index)
-            const q = query(eventsRef, orderBy("createdAt", "desc"));
+                // ✅ ใช้แค่ orderBy อย่างเดียว (ไม่ต้อง index)
+                const q = query(eventsRef, orderBy("createdAt", "desc"));
 
-            const querySnapshot = await getDocs(q);
+                const querySnapshot = await getDocs(q);
 
-            const eventsData = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
+                const eventsData = querySnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
 
-            console.log("✅ Events loaded:", eventsData.length);
-            setEvents(eventsData);
-            setError(null);
-        } catch (err) {
-            console.error("❌ Error fetching events:", err);
-            console.error("Error code:", err.code);
-            console.error("Error message:", err.message);
-            setError(`ไม่สามารถโหลดข้อมูล events ได้: ${err.message}`);
-        } finally {
-            setLoading(false);
-        }
-    };
+                console.log("✅ Events loaded:", eventsData.length);
+                setEvents(eventsData);
+                setError(null);
+            } catch (err) {
+                console.error("❌ Error fetching events:", err);
+                console.error("Error code:", err.code);
+                console.error("Error message:", err.message);
+                setError(`ไม่สามารถโหลดข้อมูล events ได้: ${err.message}`);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    fetchEvents();
-}, []);
+        fetchEvents();
+    }, []);
 
     // ดึงข้อมูล Registrations (สำหรับ Students)
-useEffect(() => {
-    const loadMyRegistrations = async () => {
-        if (!user || !userProfile || loading) {
-            return;
-        }
+    useEffect(() => {
+        const loadMyRegistrations = async () => {
+            if (!user || !userProfile || loading) {
+                return;
+            }
 
-        if (userProfile.role !== "student") {
-            setMyRegistrations([]);
-            return;
-        }
+            if (userProfile.role !== "student") {
+                setMyRegistrations([]);
+                return;
+            }
 
-        try {
-            console.log("🔵Loading registrations for user:", user.uid);
+            try {
+                console.log("🔵Loading registrations for user:", user.uid);
 
-            const registeredEvents = [];
+                const registeredEvents = [];
 
-            events.forEach((event) => {
-                if (event.participants && Array.isArray(event.participants)) {
-                    const userParticipant = event.participants.find(
-                        p => p.userId === user.uid
-                    );
+                events.forEach((event) => {
+                    if (
+                        event.participants &&
+                        Array.isArray(event.participants)
+                    ) {
+                        const userParticipant = event.participants.find(
+                            (p) => p.userId === user.uid
+                        );
 
-                    if (userParticipant) {
-                        registeredEvents.push({
-                            id: event.id,
-                            eventId: event.id,
-                            eventTitle: event.title,
-                            eventDate: event.startDate || event.date,
-                            eventLocation: event.location,
-                            eventCategory: event.category,
-                            eventImage: event.imageUrl,
-                            registrationDate: userParticipant.registrationDate,
-                            checkedIn: userParticipant.checkedIn || false,
-                            status: userParticipant.status || "confirmed",
-                        });
+                        if (userParticipant) {
+                            registeredEvents.push({
+                                id: event.id,
+                                eventId: event.id,
+                                eventTitle: event.title,
+                                eventDate: event.startDate || event.date,
+                                eventLocation: event.location,
+                                eventCategory: event.category,
+                                eventImage: event.imageUrl,
+                                registrationDate:
+                                    userParticipant.registrationDate,
+                                checkedIn: userParticipant.checkedIn || false,
+                                status: userParticipant.status || "confirmed",
+                            });
+                        }
                     }
-                }
-            });
+                });
 
-            registeredEvents.sort((a, b) => {
-                const dateA = new Date(a.registrationDate || 0);
-                const dateB = new Date(b.registrationDate || 0);
-                return dateB - dateA;
-            });
+                registeredEvents.sort((a, b) => {
+                    const dateA = new Date(a.registrationDate || 0);
+                    const dateB = new Date(b.registrationDate || 0);
+                    return dateB - dateA;
+                });
 
-            console.log("✅ Registered events:", registeredEvents);
-            setMyRegistrations(registeredEvents);
-        } catch (err) {
-            console.error("❌ Error loading registrations:", err);
-        }
-    };
+                console.log("✅ Registered events:", registeredEvents);
+                setMyRegistrations(registeredEvents);
+            } catch (err) {
+                console.error("❌ Error loading registrations:", err);
+            }
+        };
 
-    loadMyRegistrations();
-}, [user, userProfile, events, loading]);
+        loadMyRegistrations();
+    }, [user, userProfile, events, loading]);
 
     const handleLogout = async () => {
         try {
@@ -246,24 +250,41 @@ useEffect(() => {
                     <div className="header-right">
                         {/* ✅ แสดงชื่อและ role */}
                         {userProfile && (
-                            <div style={{ 
-                                display: "flex", 
-                                alignItems: "center", 
-                                gap: "0.5rem", 
-                                marginRight: "1rem" 
-                            }}>
-                                <span style={{ fontWeight: "600", color: "#2d3748" }}>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
+                                    marginRight: "1rem",
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        fontWeight: "600",
+                                        color: "#2d3748",
+                                    }}
+                                >
                                     {userProfile.displayName}
                                 </span>
-                                <span style={{ 
-                                    fontSize: "0.85rem",
-                                    padding: "0.25rem 0.5rem",
-                                    backgroundColor: userProfile.role === "organizer" ? "#e3f2fd" : "#f3e5f5",
-                                    color: userProfile.role === "organizer" ? "#1976d2" : "#7b1fa2",
-                                    borderRadius: "4px",
-                                    fontWeight: "500"
-                                }}>
-                                    {userProfile.role === "organizer" ? "🎯 Organizer" : "👤 Student"}
+                                <span
+                                    style={{
+                                        fontSize: "0.85rem",
+                                        padding: "0.25rem 0.5rem",
+                                        backgroundColor:
+                                            userProfile.role === "organizer"
+                                                ? "#e3f2fd"
+                                                : "#f3e5f5",
+                                        color:
+                                            userProfile.role === "organizer"
+                                                ? "#1976d2"
+                                                : "#7b1fa2",
+                                        borderRadius: "4px",
+                                        fontWeight: "500",
+                                    }}
+                                >
+                                    {userProfile.role === "organizer"
+                                        ? "🎯 Organizer"
+                                        : "👤 Student"}
                                 </span>
                             </div>
                         )}
@@ -362,32 +383,39 @@ useEffect(() => {
                 <div className="content">
                     {/* ✅ ปุ่ม Create Event (สำหรับ Organizer) */}
                     {userProfile?.role === "organizer" && (
-                        <div style={{ 
-                            marginBottom: "1.5rem", 
-                            display: "flex", 
-                            justifyContent: "flex-end" 
-                        }}>
-                            <button 
+                        <div
+                            style={{
+                                marginBottom: "1.5rem",
+                                display: "flex",
+                                justifyContent: "flex-end",
+                            }}
+                        >
+                            <button
                                 onClick={() => navigate("/organizerHome")}
                                 style={{
                                     padding: "0.75rem 1.5rem",
-                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                    background:
+                                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                                     color: "white",
                                     border: "none",
                                     borderRadius: "8px",
                                     fontSize: "1rem",
                                     fontWeight: "600",
                                     cursor: "pointer",
-                                    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-                                    transition: "all 0.3s ease"
+                                    boxShadow:
+                                        "0 4px 12px rgba(102, 126, 234, 0.3)",
+                                    transition: "all 0.3s ease",
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.target.style.transform = "translateY(-2px)";
-                                    e.target.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.4)";
+                                    e.target.style.transform =
+                                        "translateY(-2px)";
+                                    e.target.style.boxShadow =
+                                        "0 6px 20px rgba(102, 126, 234, 0.4)";
                                 }}
                                 onMouseLeave={(e) => {
                                     e.target.style.transform = "translateY(0)";
-                                    e.target.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.3)";
+                                    e.target.style.boxShadow =
+                                        "0 4px 12px rgba(102, 126, 234, 0.3)";
                                 }}
                             >
                                 📊 Go to Organizer Dashboard
@@ -397,109 +425,165 @@ useEffect(() => {
 
                     {/* ✅ My Registered Events (สำหรับ Student) */}
                     {userProfile?.role === "student" && (
-                        <div style={{ 
-                            marginBottom: "2rem",
-                            padding: "1.5rem",
-                            background: "linear-gradient(135deg, #f8f9ff 0%, #fff5f8 100%)",
-                            borderRadius: "12px",
-                            border: "2px solid #667eea"
-                        }}>
-                            <h3 style={{ 
-                                margin: "0 0 1rem 0",
-                                fontSize: "1.25rem",
-                                fontWeight: "700",
-                                color: "#2d3748"
-                            }}>
-                                📅 My Registered Events {myRegistrations.length > 0 && `(${myRegistrations.length})`}
+                        <div
+                            style={{
+                                marginBottom: "2rem",
+                                padding: "1.5rem",
+                                background:
+                                    "linear-gradient(135deg, #f8f9ff 0%, #fff5f8 100%)",
+                                borderRadius: "12px",
+                                border: "2px solid #667eea",
+                            }}
+                        >
+                            <h3
+                                style={{
+                                    margin: "0 0 1rem 0",
+                                    fontSize: "1.25rem",
+                                    fontWeight: "700",
+                                    color: "#2d3748",
+                                }}
+                            >
+                                📅 My Registered Events{" "}
+                                {myRegistrations.length > 0 &&
+                                    `(${myRegistrations.length})`}
                             </h3>
-                    
+
                             {/* ✅ แสดง Empty State ถ้ายังไม่มี registrations */}
                             {myRegistrations.length === 0 ? (
-                                <div style={{
-                                    textAlign: "center",
-                                    padding: "2rem",
-                                    color: "#666"
-                                }}>
-                                    <p style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>
-                                        You haven't registered for any events yet
+                                <div
+                                    style={{
+                                        textAlign: "center",
+                                        padding: "2rem",
+                                        color: "#666",
+                                    }}
+                                >
+                                    <p
+                                        style={{
+                                            fontSize: "1rem",
+                                            marginBottom: "0.5rem",
+                                        }}
+                                    >
+                                        You haven't registered for any events
+                                        yet
                                     </p>
-                                    <p style={{ fontSize: "0.875rem", color: "#999" }}>
-                                        Browse events below and register to see them here!
+                                    <p
+                                        style={{
+                                            fontSize: "0.875rem",
+                                            color: "#999",
+                                        }}
+                                    >
+                                        Browse events below and register to see
+                                        them here!
                                     </p>
                                 </div>
                             ) : (
-                                <div style={{ 
-                                    display: "grid",
-                                    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                                    gap: "1rem"
-                                }}>
+                                <div
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns:
+                                            "repeat(auto-fill, minmax(250px, 1fr))",
+                                        gap: "1rem",
+                                    }}
+                                >
                                     {myRegistrations.map((registration) => (
-                                        <div 
+                                        <div
                                             key={registration.id}
-                                            onClick={() => navigate(`/event/${registration.eventId}`)}
+                                            onClick={() =>
+                                                navigate(
+                                                    `/event/${registration.eventId}`
+                                                )
+                                            }
                                             style={{
                                                 background: "white",
                                                 borderRadius: "8px",
                                                 padding: "1rem",
                                                 cursor: "pointer",
                                                 transition: "all 0.3s ease",
-                                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
+                                                boxShadow:
+                                                    "0 2px 8px rgba(0, 0, 0, 0.1)",
                                             }}
                                             onMouseEnter={(e) => {
-                                                e.currentTarget.style.transform = "translateY(-4px)";
-                                                e.currentTarget.style.boxShadow = "0 4px 16px rgba(102, 126, 234, 0.3)";
+                                                e.currentTarget.style.transform =
+                                                    "translateY(-4px)";
+                                                e.currentTarget.style.boxShadow =
+                                                    "0 4px 16px rgba(102, 126, 234, 0.3)";
                                             }}
                                             onMouseLeave={(e) => {
-                                                e.currentTarget.style.transform = "translateY(0)";
-                                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
+                                                e.currentTarget.style.transform =
+                                                    "translateY(0)";
+                                                e.currentTarget.style.boxShadow =
+                                                    "0 2px 8px rgba(0, 0, 0, 0.1)";
                                             }}
                                         >
-                                            <h4 style={{
-                                                fontSize: "1rem",
-                                                fontWeight: "600",
-                                                color: "#2d3748",
-                                                margin: "0 0 0.5rem 0"
-                                            }}>
+                                            <h4
+                                                style={{
+                                                    fontSize: "1rem",
+                                                    fontWeight: "600",
+                                                    color: "#2d3748",
+                                                    margin: "0 0 0.5rem 0",
+                                                }}
+                                            >
                                                 {registration.eventTitle}
                                             </h4>
-                                            <p style={{
-                                                fontSize: "0.85rem",
-                                                color: "#666",
-                                                margin: "0 0 0.5rem 0"
-                                            }}>
-                                            🗓️ {registration.eventDate && (
-                                                registration.eventDate.toDate 
-                                                    ? registration.eventDate.toDate().toLocaleDateString('th-TH', {
-                                                        year: 'numeric',
-                                                        month: 'long',
-                                                        day: 'numeric'
-                                                    })
-                                                    : typeof registration.eventDate === 'string'
-                                                        ? new Date(registration.eventDate).toLocaleDateString('th-TH', {
-                                                            year: 'numeric',
-                                                            month: 'long',
-                                                            day: 'numeric'
-                                                        })
-                                                        : 'TBA'
-                                            )}
-                                        </p>
-                                            <span style={{
-                                                display: "inline-block",
-                                                padding: "0.25rem 0.5rem",
-                                                borderRadius: "4px",
-                                                fontSize: "0.85rem",
-                                                fontWeight: "500",
-                                                backgroundColor: registration.checkedIn ? "#4caf50" : "#ff9800",
-                                                color: "white"
-                                            }}>
-                                                {registration.checkedIn ? "✅ Checked In" : "⏳ Registered"}
+                                            <p
+                                                style={{
+                                                    fontSize: "0.85rem",
+                                                    color: "#666",
+                                                    margin: "0 0 0.5rem 0",
+                                                }}
+                                            >
+                                                🗓️{" "}
+                                                {registration.eventDate &&
+                                                    (registration.eventDate
+                                                        .toDate
+                                                        ? registration.eventDate
+                                                              .toDate()
+                                                              .toLocaleDateString(
+                                                                  "th-TH",
+                                                                  {
+                                                                      year: "numeric",
+                                                                      month: "long",
+                                                                      day: "numeric",
+                                                                  }
+                                                              )
+                                                        : typeof registration.eventDate ===
+                                                          "string"
+                                                        ? new Date(
+                                                              registration.eventDate
+                                                          ).toLocaleDateString(
+                                                              "th-TH",
+                                                              {
+                                                                  year: "numeric",
+                                                                  month: "long",
+                                                                  day: "numeric",
+                                                              }
+                                                          )
+                                                        : "TBA")}
+                                            </p>
+                                            <span
+                                                style={{
+                                                    display: "inline-block",
+                                                    padding: "0.25rem 0.5rem",
+                                                    borderRadius: "4px",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: "500",
+                                                    backgroundColor:
+                                                        registration.checkedIn
+                                                            ? "#4caf50"
+                                                            : "#ff9800",
+                                                    color: "white",
+                                                }}
+                                            >
+                                                {registration.checkedIn
+                                                    ? "✅ Checked In"
+                                                    : "⏳ Registered"}
                                             </span>
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
-                    )}   
+                    )}
 
                     <div className="banner">
                         <h2>Don't miss a single event!</h2>
@@ -574,20 +658,26 @@ useEffect(() => {
                     )}
 
                     {/* Events Grid */}
-                    {!loading && !error && (
-                        filteredEvents.length > 0 ? (
+                    {!loading &&
+                        !error &&
+                        (filteredEvents.length > 0 ? (
                             <div className="events-grid">
                                 {filteredEvents.map((event) => (
                                     <article
                                         key={event.id}
                                         className="event-card"
-                                        onClick={() => handleEventClick(event.id)}
+                                        onClick={() =>
+                                            handleEventClick(event.id)
+                                        }
                                         style={{ cursor: "pointer" }}
                                     >
                                         <div
                                             className="event-image"
                                             style={{
-                                                backgroundImage: `url(${event.imageURL || "/duck.jpg"})`,
+                                                backgroundImage: `url(${
+                                                    event.imageUrl ||
+                                                    "/duck.jpg"
+                                                })`,
                                                 backgroundSize: "cover",
                                                 backgroundPosition: "center",
                                             }}
@@ -603,31 +693,46 @@ useEffect(() => {
                                                 <div
                                                     className="progress-fill"
                                                     style={{
-                                                        width: `${((event.currentParticipants || 0) / event.capacity) * 100}%`,
+                                                        width: `${
+                                                            ((event.currentParticipants ||
+                                                                0) /
+                                                                event.capacity) *
+                                                            100
+                                                        }%`,
                                                     }}
                                                 ></div>
                                             </div>
 
                                             {/* ✅ เพิ่มแสดงข้อมูล location และ participants */}
-                                            <div style={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                marginTop: "0.5rem",
-                                                paddingTop: "0.5rem",
-                                                borderTop: "1px solid #e0e0e0",
-                                                fontSize: "0.85rem",
-                                                color: "#666"
-                                            }}>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems: "center",
+                                                    marginTop: "0.5rem",
+                                                    paddingTop: "0.5rem",
+                                                    borderTop:
+                                                        "1px solid #e0e0e0",
+                                                    fontSize: "0.85rem",
+                                                    color: "#666",
+                                                }}
+                                            >
                                                 <div>📍 {event.location}</div>
-                                                <div>👥 {event.currentParticipants || 0}/{event.capacity}</div>
+                                                <div>
+                                                    👥{" "}
+                                                    {event.currentParticipants ||
+                                                        0}
+                                                    /{event.capacity}
+                                                </div>
                                             </div>
 
                                             <div className="event-author">
                                                 <div className="author-avatar"></div>
                                                 <div className="author-info">
                                                     <div className="author-name">
-                                                        {event.organizerName || "Unknown"}
+                                                        {event.organizerName ||
+                                                            "Unknown"}
                                                     </div>
                                                     <div className="author-role">
                                                         Organizer
