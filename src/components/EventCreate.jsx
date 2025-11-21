@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { collection, addDoc, updateDoc, doc, getDoc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, doc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
+import { useUserAuth } from "../context/UserAuthContext";
 import { ArrowLeft, Upload, X, Plus } from "lucide-react";
 import "../style/EventCreate.css";
 
@@ -9,6 +10,7 @@ function EventManagement() {
     const navigate = useNavigate();
     const { eventId } = useParams();
     const isEditMode = !!eventId;
+    const { user } = useUserAuth();
 
     const [formData, setFormData] = useState({
         title: "",
@@ -23,12 +25,17 @@ function EventManagement() {
         description: "",
         imageUrl: "",
         tags: [],
+        currentParticipants: 0,
+        maxParticipants: 100,
+        status: "upcoming",
+        participants: [],
     });
 
     const [newTag, setNewTag] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [imagePreview, setImagePreview] = useState("");
+    const [userProfile, setUserProfile] = useState(null);
 
     const categoryOptions = [
         { value: "education", label: "Education", icon: "💡" },
@@ -39,11 +46,42 @@ function EventManagement() {
         { value: "business", label: "Business", icon: "💼" },
     ];
 
+    // ✅ ดึง user profile
     useEffect(() => {
-        if (isEditMode) {
+        const fetchUserProfile = async () => {
+            if (!user) {
+                console.log("⚠️ No user - redirecting to login");
+                navigate("/login");
+                return;
+            }
+
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const profile = userDoc.data();
+                    setUserProfile(profile);
+
+                    if (profile.role !== "organizer") {
+                        alert("Access denied. Only organizers can create events!");
+                        navigate("/home");
+                    }
+                } else {
+                    navigate("/login");
+                }
+            } catch (err) {
+                console.error("Error fetching user profile:", err);
+                navigate("/login");
+            }
+        };
+
+        fetchUserProfile();
+    }, [user, navigate]);
+
+    useEffect(() => {
+        if (isEditMode && userProfile) {
             loadEventData();
         }
-    }, [eventId]);
+    }, [eventId, userProfile]);
 
     const loadEventData = async () => {
         try {
@@ -51,7 +89,16 @@ function EventManagement() {
             const eventDoc = await getDoc(doc(db, "events", eventId));
             if (eventDoc.exists()) {
                 const data = eventDoc.data();
+
+                // ✅ ตรวจสอบ ownership
+                if (data.organizerId !== user.uid) {
+                    alert("You can only edit your own events!");
+                    navigate("/organizerHome");
+                    return;
+                }
+
                 setFormData(data);
+
                 if (data.imageUrl) {
                     setImagePreview(data.imageUrl);
                 }
@@ -75,6 +122,11 @@ function EventManagement() {
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 10 * 1024 * 1024) {
+                alert("Image size must be less than 10MB");
+                return;
+            }
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreview(reader.result);
@@ -110,27 +162,83 @@ function EventManagement() {
         setLoading(true);
 
         try {
+            // ✅ Validation: end time > start time
+            if (formData.endTime <= formData.startTime) {
+                alert("End time must be after start time!");
+                setLoading(false);
+                return;
+            }
+
+            // ✅ สร้าง Timestamp จาก date และ time (สำหรับ query)
+            const startDateTime = new Date(`${formData.date}T${formData.startTime}`);
+            const endDateTime = new Date(`${formData.date}T${formData.endTime}`);
+
+            // ✅ สร้างชื่อเต็มจาก firstName + lastName
+            const fullName = userProfile.firstName && userProfile.lastName 
+                ? `${userProfile.firstName} ${userProfile.lastName}`
+                : userProfile.email;
+
+            // ✅Event data ตาม structure จริง
             const eventData = {
-                ...formData,
-                updatedAt: new Date(),
-                createdAt: isEditMode ? formData.createdAt : new Date(),
+                title: formData.title,
+                organizer: formData.organizer,
+                organizerId: user.uid, // ✅ เพิ่ม
+                organizerName: fullName, // ✅ ใช้ firstName + lastName
+                organizerEmail: userProfile.email, // ✅ เพิ่ม
+
+                // ✅ เก็บทั้ง string และ Timestamp
+                date: formData.date, // string: "2025-11-30" (backward compatible)
+                startDate: Timestamp.fromDate(startDateTime), // ✅ Timestamp สำหรับ query/sort
+                endDate: Timestamp.fromDate(endDateTime), // ✅ Timestamp
+                startTime: formData.startTime, // string: "09:00"
+                endTime: formData.endTime, // string: "12:30"
+
+                location: formData.location,
+                building: formData.building,
+                floor: formData.floor,
+                category: formData.category,
+                description: formData.description,
+                imageUrl: formData.imageUrl, // ✅ ตัว l เล็ก
+                tags: formData.tags || [],
+
+                // ✅ เพิ่ม fields ใหม่
+                currentParticipants: formData.currentParticipants || 0,
+                maxParticipants: formData.maxParticipants || 100,
+                status: formData.status || "upcoming",
+                participants: formData.participants || [],
+
+                // ✅ Timestamps
+                updatedAt: Timestamp.now(),
+                createdAt: isEditMode ? formData.createdAt : Timestamp.now(),
             };
 
             if (isEditMode) {
                 await updateDoc(doc(db, "events", eventId), eventData);
+                console.log("✅ Event updated:", eventId);
                 alert("Event updated successfully!");
             } else {
-                await addDoc(collection(db, "events"), eventData);
+                const docRef = await addDoc(collection(db, "events"), eventData);
+                console.log("✅ Event created:", docRef.id);
                 alert("Event created successfully!");
             }
-            navigate("/home");
+
+            navigate("/organizerHome");
         } catch (err) {
             setError(err.message);
-            console.error(err);
+            console.error("❌ Error saving event:", err);
+            alert("Failed to save event: " + err.message);
         } finally {
             setLoading(false);
         }
     };
+    
+    if (!userProfile) {
+        return (
+            <div className="event-management-container">
+                <div className="loading-state">Loading...</div>
+            </div>
+        );
+    }
 
     if (loading && isEditMode) {
         return (
@@ -246,6 +354,7 @@ function EventManagement() {
                                 value={formData.date}
                                 onChange={handleInputChange}
                                 className="form-control event-input"
+                                min={new Date().toISOString().split('T')[0]}
                                 required
                             />
                         </div>
@@ -273,6 +382,20 @@ function EventManagement() {
                                 required
                             />
                         </div>
+                    </div>
+                    
+                    {/* Max Participants */}
+                    <div className="form-section">
+                        <label className="section-label">Max Participants</label>
+                        <input
+                            type="number"
+                            name="maxParticipants"
+                            value={formData.maxParticipants}
+                            onChange={handleInputChange}
+                            placeholder="Maximum number of participants (default: 100)"
+                            className="form-control event-input"
+                            min="1"
+                        />
                     </div>
 
                     {/* Location */}
@@ -353,10 +476,12 @@ function EventManagement() {
                                 type="text"
                                 value={newTag}
                                 onChange={(e) => setNewTag(e.target.value)}
-                                onKeyPress={(e) =>
-                                    e.key === "Enter" &&
-                                    (e.preventDefault(), addTag())
-                                }
+                                onKeyDown={(e) => {  // ✅ เปลี่ยนจาก onKeyPress
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        addTag();
+                                    }
+                                }}
                                 placeholder="Add tags (press Enter)"
                                 className="form-control event-input"
                             />
@@ -404,7 +529,7 @@ function EventManagement() {
                     <div className="form-actions">
                         <button
                             type="button"
-                            onClick={() => navigate("/home")}
+                            onClick={() => navigate("/organizerHome")}
                             className="btn btn-cancel"
                             disabled={loading}
                         >

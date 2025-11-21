@@ -93,32 +93,60 @@ function PageHome() {
 }, []);
 
     // ดึงข้อมูล Registrations (สำหรับ Students)
-    useEffect(() => {
-        const fetchMyRegistrations = async () => {
-            if (!user || userProfile?.role !== "student") return;
+useEffect(() => {
+    const loadMyRegistrations = async () => {
+        if (!user || !userProfile || loading) {
+            return;
+        }
 
-            try {
-                const registrationsRef = collection(db, "registrations");
-                const q = query(
-                    registrationsRef, 
-                    where("userId", "==", user.uid),
-                    where("status", "in", ["registered", "checked-in"])
-                );
-                const querySnapshot = await getDocs(q);
+        if (userProfile.role !== "student") {
+            setMyRegistrations([]);
+            return;
+        }
 
-                const registrations = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+        try {
+            console.log("🔵Loading registrations for user:", user.uid);
 
-                setMyRegistrations(registrations);
-            } catch (err) {
-                console.error("Error fetching registrations:", err);
-            }
-        };
+            const registeredEvents = [];
 
-        fetchMyRegistrations();
-    }, [user, userProfile]);
+            events.forEach((event) => {
+                if (event.participants && Array.isArray(event.participants)) {
+                    const userParticipant = event.participants.find(
+                        p => p.userId === user.uid
+                    );
+
+                    if (userParticipant) {
+                        registeredEvents.push({
+                            id: event.id,
+                            eventId: event.id,
+                            eventTitle: event.title,
+                            eventDate: event.startDate || event.date,
+                            eventLocation: event.location,
+                            eventCategory: event.category,
+                            eventImage: event.imageUrl,
+                            registrationDate: userParticipant.registrationDate,
+                            checkedIn: userParticipant.checkedIn || false,
+                            status: userParticipant.status || "confirmed",
+                        });
+                    }
+                }
+            });
+
+            registeredEvents.sort((a, b) => {
+                const dateA = new Date(a.registrationDate || 0);
+                const dateB = new Date(b.registrationDate || 0);
+                return dateB - dateA;
+            });
+
+            console.log("✅ Registered events:", registeredEvents);
+            setMyRegistrations(registeredEvents);
+        } catch (err) {
+            console.error("❌ Error loading registrations:", err);
+        }
+    };
+
+    loadMyRegistrations();
+}, [user, userProfile, events, loading]);
 
     const handleLogout = async () => {
         try {
@@ -439,13 +467,22 @@ function PageHome() {
                                                 color: "#666",
                                                 margin: "0 0 0.5rem 0"
                                             }}>
-                                                🗓️ {registration.eventDate && 
-                                                    new Date(registration.eventDate.toDate()).toLocaleDateString('th-TH', {
+                                            🗓️ {registration.eventDate && (
+                                                registration.eventDate.toDate 
+                                                    ? registration.eventDate.toDate().toLocaleDateString('th-TH', {
                                                         year: 'numeric',
                                                         month: 'long',
                                                         day: 'numeric'
-                                                    })}
-                                            </p>
+                                                    })
+                                                    : typeof registration.eventDate === 'string'
+                                                        ? new Date(registration.eventDate).toLocaleDateString('th-TH', {
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric'
+                                                        })
+                                                        : 'TBA'
+                                            )}
+                                        </p>
                                             <span style={{
                                                 display: "inline-block",
                                                 padding: "0.25rem 0.5rem",

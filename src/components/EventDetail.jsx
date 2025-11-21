@@ -5,7 +5,7 @@ import {
   Home, Search, Bell, User, Inbox, Calendar,
   ArrowLeft, MapPin, Clock, Users, Share2, CalendarPlus
 } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 
 function EventDetail() {
@@ -17,6 +17,30 @@ function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [userProfile, setUserProfile] = useState(null); 
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [registering, setRegistering] = useState(false); 
+
+  // ✅ดึง user profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserProfile(userDoc.data());
+        }
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user, navigate]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -26,7 +50,17 @@ function EventDetail() {
         const eventSnap = await getDoc(eventRef);
         
         if (eventSnap.exists()) {
-          setEvent({ id: eventSnap.id, ...eventSnap.data() });
+          const eventData = { id: eventSnap.id, ...eventSnap.data() };
+          setEvent(eventData);
+
+          // ✅ เช็คว่าลงทะเบียนแล้วหรือยัง
+          if (user && eventData.participants) {
+            const registered = eventData.participants.some(
+              p => p.userId === user.uid
+            );
+            setIsRegistered(registered);
+          }
+
           setError(null);
         } else {
           setError("ไม่พบข้อมูล event");
@@ -42,7 +76,7 @@ function EventDetail() {
     if (eventId) {
       fetchEvent();
     }
-  }, [eventId]);
+  }, [eventId, user]);
 
   const handleLogout = async () => {
     try {
@@ -58,21 +92,63 @@ function EventDetail() {
   };
 
   const handleJoinEvent = () => {
+    if (!user) {
+      alert("กรุณา login ก่อนลงทะเบียน");
+      navigate("/login");
+      return;
+    }
+
+    if (isRegistered) {
+      alert("คุณลงทะเบียน event นี้แล้ว!");
+      return;
+    }
+
+    // ✅ เช็คว่าเต็มแล้วหรือยัง
+    if (event.currentParticipants >= event.maxParticipants) {
+      alert("Event นี้เต็มแล้ว!");
+      return;
+    }
+
     setShowConfirmModal(true);
   };
 
   const handleConfirmRegister = async () => {
-    // ส่งข้อมูลการลงทะเบียนไปยัง Firebase ตรงนี้
+    if (!userProfile) {
+      alert("กรุณารอสักครู่...");
+      return;
+    }
+
     try {
-      // บันทึกการลงทะเบียนลง Firebase
-      // await addDoc(collection(db, 'registrations'), { ... })
-      
+      setRegistering(true);
+
+      // ✅ สร้าง participant object
+      const participant = {
+        userId: user.uid,
+        name: userProfile.firstName && userProfile.lastName 
+          ? `${userProfile.firstName} ${userProfile.lastName}`
+          : userProfile.email,
+        email: userProfile.email,
+        phone: userProfile.phone || "",
+        registrationDate: new Date().toISOString().split('T')[0],
+        status: "confirmed"
+      };
+
+      // ✅ บันทึกลง Firestore
+      await updateDoc(doc(db, "events", eventId), {
+        participants: arrayUnion(participant),
+        currentParticipants: increment(1)
+      });
+
+      console.log("✅ Registration successful");
       setShowConfirmModal(false);
-      // นำทางไปหน้ายืนยันการลงทะเบียนพร้อม QR Code
+
+      // ✅ นำทางไปหน้ายืนยันพร้อม QR Code
       navigate(`/event/${eventId}/confirmed`);
     } catch (err) {
-      console.error("Error registering:", err);
-      alert('เกิดข้อผิดพลาดในการลงทะเบียน');
+      console.error("❌ Error registering:", err);
+      alert('เกิดข้อผิดพลาดในการลงทะเบียน: ' + err.message);
+    } finally {
+      setRegistering(false);
     }
   };
 
@@ -81,8 +157,35 @@ function EventDetail() {
   };
 
   const handleAddToCalendar = () => {
-    // สามารถเพิ่ม logic การเพิ่มลงปฏิทินจริงได้ตรงนี้
-    alert('เพิ่มลงปฏิทินแล้ว!');
+    // ✅ สามารถเพิ่ม logic การเพิ่มลงปฏิทินจริงได้ตรงนี้
+    if (event.startDate) {
+      const startDate = event.startDate.toDate ? event.startDate.toDate() : new Date(event.startDate);
+      const endDate = event.endDate.toDate ? event.endDate.toDate() : new Date(event.endDate);
+
+      // ใช้ Google Calendar URL
+      const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.location)}`;
+
+      window.open(googleCalendarUrl, '_blank');
+    } else {
+      alert('เพิ่มลงปฏิทินแล้ว!');
+    }
+  };
+
+  // ✅ Helper function แปลงวันที่
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'TBA';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('th-TH', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (timeString) => {
+    if (!timeString) return 'TBA';
+    return timeString;
   };
 
   if (loading) {
@@ -208,9 +311,10 @@ function EventDetail() {
                   padding: '0.5rem 1rem',
                   borderRadius: '4px',
                   fontSize: '0.9rem',
-                  fontWeight: '600'
+                  fontWeight: '600',
+                  transform: 'capitalize'
                 }}>
-                  {event.category}
+                  {event.category || 'General'}
                 </div>
               </div>
             </div>
@@ -232,25 +336,32 @@ function EventDetail() {
               }}>
                 {event.title}
               </h1>
+              {/* ✅ ปุ่ม Register - เปลี่ยนสีตาม status */}
               <button 
                 className="banner-btn"
                 onClick={handleJoinEvent}
+                disabled={isRegistered || event.currentParticipants >= event.maxParticipants}
                 style={{
-                  backgroundColor: '#ffd740',
-                  color: '#000',
+                  backgroundColor: isRegistered 
+                    ? '#9e9e9e' 
+                    : event.currentParticipants >= event.maxParticipants 
+                      ? '#f44336' 
+                      : '#ffd740',
+                  color: isRegistered || event.currentParticipants >= event.maxParticipants ? '#fff' : '#000',
                   border: 'none',
                   padding: '0.75rem 2rem',
                   borderRadius: '8px',
                   fontSize: '1rem',
                   fontWeight: '600',
-                  cursor: 'pointer',
+                  cursor: isRegistered || event.currentParticipants >= event.maxParticipants ? 'not-allowed' : 'pointer',
                   whiteSpace: 'nowrap',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem'
+                  gap: '0.5rem',
+                  opacity: isRegistered || event.currentParticipants >= event.maxParticipants ? 0.7 : 1
                 }}
               >
-                🔧 Register
+                {isRegistered ? '✓ Registered' : event.currentParticipants >= event.maxParticipants ? '✗ Full' : '🔧 Register'}
               </button>
             </div>
 
@@ -275,14 +386,14 @@ function EventDetail() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Calendar size={20} color="#666" />
                   <span style={{ color: '#666' }}>
-                    <strong>Day, Date:</strong> {event.date || 'TBA'}
+                    <strong>Date:</strong> {formatDate(event.startDate || event.date)}
                   </span>
                 </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Clock size={20} color="#666" />
                   <span style={{ color: '#666' }}>
-                    <strong>Time:</strong> {event.time || 'TBA'}
+                    <strong>Time:</strong> {formatTime(event.startTime)} - {formatTime(event.endTime)}
                   </span>
                 </div>
               </div>
@@ -332,9 +443,39 @@ function EventDetail() {
                 color: '#666', 
                 fontSize: '1rem' 
               }}>
-                {event.description || 'Lorem ipsum dolor sit amet consectetur. Eget vulputate sodis sit urna et aliquot. Vivamus facilisi diam et mi posuere malesuada nunc viverra nulla.'}
+                {event.description || 'No description available.'}
               </p>
             </div>
+
+            {/* ✅ Tags Section */}
+            {event.tags && event.tags.length > 0 && (
+              <div style={{ marginBottom: '2rem' }}>
+                <h3 style={{ 
+                  fontSize: '1.2rem', 
+                  marginBottom: '1rem', 
+                  color: '#333', 
+                  fontWeight: '600' 
+                }}>
+                  Tags
+                </h3>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {event.tags.map((tag, index) => (
+                    <span 
+                      key={index}
+                      style={{
+                        padding: '0.4rem 0.8rem',
+                        backgroundColor: '#e3f2fd',
+                        color: '#1976d2',
+                        borderRadius: '16px',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Additional Info Cards */}
             <div style={{ 
@@ -359,9 +500,15 @@ function EventDetail() {
                   <MapPin size={20} color="#2196f3" />
                   <strong style={{ color: '#333' }}>Location</strong>
                 </div>
-                <p style={{ color: '#666', margin: 0 }}>
+                <p style={{ color: '#666', margin: 0, marginBottom: '0.25rem' }}>
                   {event.location || 'TBA'}
                 </p>
+                {event.building && (
+                  <p style={{ color: '#999', margin: 0, fontSize: '0.9rem' }}>
+                    Building: {event.building}
+                    {event.floor && `, Floor: ${event.floor}`}
+                  </p>
+                )}
               </div>
 
               {/* Participants Card */}
@@ -381,7 +528,7 @@ function EventDetail() {
                   <strong style={{ color: '#333' }}>Participants</strong>
                 </div>
                 <p style={{ color: '#666', margin: 0 }}>
-                  {event.participants || 0} registered
+                  {event.currentParticipants || 0} / {event.maxParticipants || 100} registered
                 </p>
               </div>
 
@@ -402,7 +549,7 @@ function EventDetail() {
                   <strong style={{ color: '#333' }}>Organizer</strong>
                 </div>
                 <p style={{ color: '#666', margin: 0 }}>
-                  {event.author || 'Unknown'}
+                  {event.organizer || event.organizerName || 'Unknown'}
                 </p>
               </div>
             </div>
@@ -476,7 +623,7 @@ function EventDetail() {
               }}>
                 <span style={{ color: '#666', fontSize: '1rem' }}>Date</span>
                 <span style={{ color: '#4caf50', fontSize: '1rem', fontWeight: '600' }}>
-                  {event.date || 'TBA'}
+                  {formatDate(event.startDate || event.date)}
                 </span>
               </div>
 
@@ -486,24 +633,25 @@ function EventDetail() {
                 style={{
                   width: '100%',
                   padding: '1rem',
-                  backgroundColor: '#4caf50',
+                  backgroundColor: registering ? '#9e9e9e' : '#4caf50',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
                   fontSize: '1.1rem',
                   fontWeight: '600',
-                  cursor: 'pointer',
+                  cursor: registering ? 'not-allowed' : 'pointer',
                   marginBottom: '0.5rem'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#45a049'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#4caf50'}
+                onMouseEnter={(e) => !registering && (e.target.style.backgroundColor = '#45a049')}
+                onMouseLeave={(e) => !registering && (e.target.style.backgroundColor = '#4caf50')}
               >
-                confirm
+                {registering ? 'กำลังลงทะเบียน...' : 'Confirm'}
               </button>
 
               {/* Cancel Button */}
               <button
                 onClick={handleCancelRegister}
+                disabled={registering}
                 style={{
                   width: '100%',
                   padding: '1rem',
@@ -512,13 +660,13 @@ function EventDetail() {
                   border: '1px solid #ddd',
                   borderRadius: '8px',
                   fontSize: '1rem',
-                  cursor: 'pointer'
+                  cursor: registering ? 'not-allowed' : 'pointer'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f5f5f5';
+                  if (!registering) e.target.style.backgroundColor = '#f5f5f5';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
+                  if (!registering) e.target.style.backgroundColor = 'transparent';
                 }}
               >
                 Cancel
