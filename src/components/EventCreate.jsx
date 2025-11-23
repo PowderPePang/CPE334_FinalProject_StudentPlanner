@@ -178,18 +178,18 @@ function EventManagement() {
                 ? `${userProfile.firstName} ${userProfile.lastName}`
                 : userProfile.email;
 
-            // ✅Event data ตาม structure จริง
+            // ✅ Event data ตาม structure จริง
             const eventData = {
                 title: formData.title,
                 organizer: formData.organizer,
-                organizerId: user.uid, // ✅ เพิ่ม
-                organizerName: fullName, // ✅ ใช้ firstName + lastName
-                organizerEmail: userProfile.email, // ✅ เพิ่ม
+                organizerId: user.uid,
+                organizerName: fullName,
+                organizerEmail: userProfile.email,
 
                 // ✅ เก็บทั้ง string และ Timestamp
-                date: formData.date, // string: "2025-11-30" (backward compatible)
-                startDate: Timestamp.fromDate(startDateTime), // ✅ Timestamp สำหรับ query/sort
-                endDate: Timestamp.fromDate(endDateTime), // ✅ Timestamp
+                date: formData.date, // string: "2025-11-30"
+                startDate: Timestamp.fromDate(startDateTime), // Timestamp
+                endDate: Timestamp.fromDate(endDateTime), // Timestamp
                 startTime: formData.startTime, // string: "09:00"
                 endTime: formData.endTime, // string: "12:30"
 
@@ -198,15 +198,23 @@ function EventManagement() {
                 floor: formData.floor,
                 category: formData.category,
                 description: formData.description,
-                imageUrl: formData.imageUrl, // ✅ ตัว l เล็ก
+                imageUrl: formData.imageUrl,
                 tags: formData.tags || [],
 
-                // ✅ เพิ่ม fields ใหม่
                 currentParticipants: formData.currentParticipants || 0,
                 maxParticipants: formData.maxParticipants || 100,
-                status: formData.status || "upcoming",
+                
+                // ✅ Event ใหม่จะเป็น "pending" รอ admin verify
+                status: isEditMode ? formData.status : "pending",
+                
+                // ✅ isVerified = false (รอการ verify)
+                isVerified: isEditMode ? formData.isVerified : false,
+                
                 participants: formData.participants || [],
 
+                // ✅ บันทึกเวลาที่ส่ง request
+                requestedAt: isEditMode ? formData.requestedAt : Timestamp.now(),
+                
                 // ✅ Timestamps
                 updatedAt: Timestamp.now(),
                 createdAt: isEditMode ? formData.createdAt : Timestamp.now(),
@@ -219,7 +227,7 @@ function EventManagement() {
             } else {
                 const docRef = await addDoc(collection(db, "events"), eventData);
                 console.log("✅ Event created:", docRef.id);
-                alert("Event created successfully!");
+                alert("Event created successfully! Waiting for admin approval.");
             }
 
             navigate("/organizerHome");
@@ -476,7 +484,7 @@ function EventManagement() {
                                 type="text"
                                 value={newTag}
                                 onChange={(e) => setNewTag(e.target.value)}
-                                onKeyDown={(e) => {  // ✅ เปลี่ยนจาก onKeyPress
+                                onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                         e.preventDefault();
                                         addTag();

@@ -21,6 +21,7 @@ import StudyTips from "./components/StudyTips.jsx";
 // Admin
 import AdminLogin from "./components/admin/AdminLogin.jsx";
 import AdminDashboard from "./components/admin/AdminDashboard.jsx";
+import AdminVerification from "./components/admin/AdminVerification.jsx";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -106,6 +107,10 @@ const router = createBrowserRouter([
     {
         path: "/admin/dashboard",
         element: <AdminDashboard />,
+    },
+    {
+        path: "/admin/verification",
+        element: <AdminVerification />,
     },
 ]);
 

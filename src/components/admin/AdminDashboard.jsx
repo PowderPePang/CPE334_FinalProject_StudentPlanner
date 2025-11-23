@@ -17,6 +17,7 @@ function AdminDashboard() {
     const [users, setUsers] = useState([]);
     const [events, setEvents] = useState([]);
     const [pendingUsers, setPendingUsers] = useState([]);
+    const [pendingEvents, setPendingEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [adminName, setAdminName] = useState("Admin");
     const [timeframe, setTimeframe] = useState("all-time");
@@ -67,6 +68,12 @@ function AdminDashboard() {
                 ...doc.data(),
             }));
             setEvents(eventsData);
+
+            // Count pending events for badge
+            const pendingEventsCount = eventsData.filter(
+                (event) => event.status === "pending" || !event.isVerified
+            );
+            setPendingEvents(pendingEventsCount);
         } catch (error) {
             console.error("Error loading data:", error);
         } finally {
@@ -750,24 +757,18 @@ function AdminDashboard() {
                             >
                                 📊 Dashboard
                             </button>
-                            {/* <button className="sidebar-btn">📋 IPS</button>
-                            <button className="sidebar-btn">💬 Message</button> */}
                         </div>
                         <div className="sidebar-section">
                             <div className="sidebar-title">OTHERS</div>
                             <button className="sidebar-btn">⚙️ Settings</button>
                             <button
-                                className={`sidebar-btn ${
-                                    activeView === "verification"
-                                        ? "active"
-                                        : ""
-                                }`}
-                                onClick={() => setActiveView("verification")}
+                                className="sidebar-btn"
+                                onClick={() => navigate("/admin/verification")}
                             >
-                                👥 Accounts
-                                {pendingUsers.length > 0 && (
+                                🧾 verification
+                                {pendingEvents.length > 0 && (
                                     <span className="badge">
-                                        {pendingUsers.length}
+                                        {pendingEvents.length}
                                     </span>
                                 )}
                             </button>
@@ -787,10 +788,6 @@ function AdminDashboard() {
                 {activeView === "dashboard" && renderDashboardView()}
                 {activeView === "verification" && renderVerificationView()}
             </div>
-
-            {/* <button className="floating-back-btn" onClick={() => navigate(-1)}>
-                ← Back
-            </button> */}
         </div>
     );
 }

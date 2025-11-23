@@ -20,6 +20,14 @@
     position: sticky;
     top: 0;
     z-index: 100;
+    margin-left: 220px;
+    width: calc(100% - 220px);
+    transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+.admin-sidebar.collapsed ~ * .admin-header {
+    margin-left: 60px;
+    width: calc(100% - 60px);
 }
 
 .admin-header-left {
@@ -197,20 +205,28 @@
     font-weight: 600;
 }
 
-/* Main Content */
+/* Main Content - เต็มจอแต่จัดเนื้อหาให้อยู่ตรงกลาง */
 .admin-main-content {
-    margin-left: 0px;
+    margin-left: 220px;
     padding: 2rem;
     min-height: calc(100vh - 73px);
-    transition: margin-left 0.3s ease;
+    transition: margin-left 0.3s ease, width 0.3s ease;
+    background-color: #f5f5f5;
+    width: calc(100% - 220px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .admin-main-content.expanded {
-    margin-left: 0px;
+    margin-left: 60px;
+    width: calc(100% - 60px);
 }
 
 .content-header {
     margin-bottom: 1.5rem;
+    width: 100%;
+    max-width: 1400px;
 }
 
 .content-header h2 {
@@ -220,17 +236,20 @@
     margin: 0;
 }
 
-/* Dashboard View */
+/* Dashboard View - จัดให้อยู่ตรงกลาง */
 .dashboard-view-enhanced {
     width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
-/* Filters */
+/* Filters - จัดให้อยู่ตรงกลาง */
 .dashboard-filters {
     display: flex;
     gap: 1.5rem;
     margin-bottom: 2rem;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .filter-group {
@@ -260,11 +279,12 @@
     border-color: #ea580c;
 }
 
-/* Analytics Grid */
+/* Analytics Grid - จัดให้อยู่ตรงกลาง */
 .analytics-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
+    width: 100%;
 }
 
 .analytics-card {
@@ -665,9 +685,11 @@
     font-weight: 600;
 }
 
-/* Verification View */
+/* Verification View - จัดให้อยู่ตรงกลาง */
 .verification-view {
     width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .verification-view h2 {
@@ -772,6 +794,9 @@
     background-color: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .empty-icon {
