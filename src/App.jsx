@@ -32,6 +32,9 @@ function App() {
                     <Link to="/login" style={styles.btnLogin}>
                         Log in
                     </Link>
+                    <Link to="/admin/login" style={styles.btnLogin}>
+                        Admin
+                    </Link>
                 </div>
             </header>
 

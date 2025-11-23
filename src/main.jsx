@@ -18,6 +18,9 @@ import EventEdit from "./components/EventEdit.jsx";
 import ForgotPassword from "./components/ForgotPassword.jsx";
 import ForPartner from "./components/ForPartner.jsx";
 import StudyTips from "./components/StudyTips.jsx";
+// Admin
+import AdminLogin from "./components/admin/AdminLogin.jsx";
+import AdminDashboard from "./components/admin/AdminDashboard.jsx";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -88,12 +91,21 @@ const router = createBrowserRouter([
         ),
     },
     {
-    path: "/partner",
-    element: <ForPartner />,
+        path: "/partner",
+        element: <ForPartner />,
     },
     {
-    path: "/study-tips",
-    element: <StudyTips />,
+        path: "/study-tips",
+        element: <StudyTips />,
+    },
+    // Admin
+    {
+        path: "/admin/login",
+        element: <AdminLogin />,
+    },
+    {
+        path: "/admin/dashboard",
+        element: <AdminDashboard />,
     },
 ]);
 
