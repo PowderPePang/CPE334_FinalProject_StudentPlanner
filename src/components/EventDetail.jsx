@@ -3,7 +3,7 @@ import { useUserAuth } from "../context/UserAuthContext";
 import React, { useState, useEffect } from 'react';
 import {
   Home, Search, Bell, User, Inbox, Calendar,
-  ArrowLeft, MapPin, Clock, Users, Share2, CalendarPlus
+  ArrowLeft, MapPin, Clock, Users, CalendarPlus
 } from 'lucide-react';
 import { doc, getDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -21,7 +21,7 @@ function EventDetail() {
   const [isRegistered, setIsRegistered] = useState(false);
   const [registering, setRegistering] = useState(false); 
 
-  // ✅ดึง user profile
+  // ดึง user profile
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user) {
@@ -53,7 +53,7 @@ function EventDetail() {
           const eventData = { id: eventSnap.id, ...eventSnap.data() };
           setEvent(eventData);
 
-          // ✅ เช็คว่าลงทะเบียนแล้วหรือยัง
+          // เช็คว่าลงทะเบียนแล้วหรือยัง
           if (user && eventData.participants) {
             const registered = eventData.participants.some(
               p => p.userId === user.uid
@@ -103,7 +103,6 @@ function EventDetail() {
       return;
     }
 
-    // ✅ เช็คว่าเต็มแล้วหรือยัง
     if (event.currentParticipants >= event.maxParticipants) {
       alert("Event นี้เต็มแล้ว!");
       return;
@@ -121,7 +120,6 @@ function EventDetail() {
     try {
       setRegistering(true);
 
-      // ✅ สร้าง participant object
       const participant = {
         userId: user.uid,
         name: userProfile.firstName && userProfile.lastName 
@@ -133,7 +131,6 @@ function EventDetail() {
         status: "confirmed"
       };
 
-      // ✅ บันทึกลง Firestore
       await updateDoc(doc(db, "events", eventId), {
         participants: arrayUnion(participant),
         currentParticipants: increment(1)
@@ -142,8 +139,9 @@ function EventDetail() {
       console.log("✅ Registration successful");
       setShowConfirmModal(false);
 
-      // ✅ นำทางไปหน้ายืนยันพร้อม QR Code
-      navigate(`/event/${eventId}/confirmed`);
+      // ✅ แก้ไขตรงนี้: ส่ง state ไปด้วย เพื่อบอกหน้าถัดไปว่าเพิ่งลงทะเบียนเสร็จ
+      navigate(`/event/${eventId}/confirmed`, { state: { justRegistered: true } });
+      
     } catch (err) {
       console.error("❌ Error registering:", err);
       alert('เกิดข้อผิดพลาดในการลงทะเบียน: ' + err.message);
@@ -157,12 +155,10 @@ function EventDetail() {
   };
 
   const handleAddToCalendar = () => {
-    // ✅ สามารถเพิ่ม logic การเพิ่มลงปฏิทินจริงได้ตรงนี้
     if (event.startDate) {
       const startDate = event.startDate.toDate ? event.startDate.toDate() : new Date(event.startDate);
       const endDate = event.endDate.toDate ? event.endDate.toDate() : new Date(event.endDate);
 
-      // ใช้ Google Calendar URL
       const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.location)}`;
 
       window.open(googleCalendarUrl, '_blank');
@@ -171,7 +167,6 @@ function EventDetail() {
     }
   };
 
-  // ✅ Helper function แปลงวันที่
   const formatDate = (timestamp) => {
     if (!timestamp) return 'TBA';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -190,487 +185,88 @@ function EventDetail() {
 
   if (loading) {
     return (
-      <div className="container">
-        <div className="sidebar">
-          <div className="logo">
-            <div className="logo-icon"><Calendar /></div>
-            <div className="logo-text">PLANNER</div>
-          </div>
-          <div className="overview-title">OVERVIEW</div>
-          <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-            <Home /> Dashboard
-          </button>
-          <button className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => setActiveTab('inbox')}>
-            <Inbox /> Inbox
-          </button>
-          <button className={`nav-item ${activeTab === 'notification' ? 'active' : ''}`} onClick={() => setActiveTab('notification')}>
-            <Bell /> Notification
-          </button>
-        </div>
-        <div className="main-content">
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-            <p>กำลังโหลดข้อมูล...</p>
-          </div>
-        </div>
-      </div>
+      <div className="container"><div className="main-content"><p style={{textAlign:'center', padding:'3rem'}}>กำลังโหลดข้อมูล...</p></div></div>
     );
   }
 
   if (error || !event) {
     return (
-      <div className="container">
-        <div className="sidebar">
-          <div className="logo">
-            <div className="logo-icon"><Calendar /></div>
-            <div className="logo-text">PLANNER</div>
-          </div>
-          <div className="overview-title">OVERVIEW</div>
-          <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-            <Home /> Dashboard
-          </button>
-          <button className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => setActiveTab('inbox')}>
-            <Inbox /> Inbox
-          </button>
-          <button className={`nav-item ${activeTab === 'notification' ? 'active' : ''}`} onClick={() => setActiveTab('notification')}>
-            <Bell /> Notification
-          </button>
-        </div>
-        <div className="main-content">
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#ff0000' }}>
-            <p>{error}</p>
-            <button onClick={handleBack} style={{ marginTop: '1rem' }}>
-              กลับหน้าหลัก
-            </button>
-          </div>
-        </div>
-      </div>
+      <div className="container"><div className="main-content"><p style={{textAlign:'center', padding:'3rem', color:'red'}}>{error}</p><button onClick={handleBack}>กลับหน้าหลัก</button></div></div>
     );
   }
 
   return (
     <div className="container">
-      {/* Sidebar */}
+      {/* Sidebar (ย่อ code ส่วนนี้ได้ถ้าใช้ Component แยก) */}
       <div className="sidebar">
-        <div className="logo">
-          <div className="logo-icon"><Calendar /></div>
-          <div className="logo-text">PLANNER</div>
-        </div>
-
+        <div className="logo"><div className="logo-icon"><Calendar /></div><div className="logo-text">PLANNER</div></div>
         <div className="overview-title">OVERVIEW</div>
-
-        <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-          <Home /> Dashboard
-        </button>
-        <button className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => setActiveTab('inbox')}>
-          <Inbox /> Inbox
-        </button>
-        <button className={`nav-item ${activeTab === 'notification' ? 'active' : ''}`} onClick={() => setActiveTab('notification')}>
-          <Bell /> Notification
-        </button>
+        <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}><Home /> Dashboard</button>
+        <button className={`nav-item ${activeTab === 'inbox' ? 'active' : ''}`} onClick={() => setActiveTab('inbox')}><Inbox /> Inbox</button>
+        <button className={`nav-item ${activeTab === 'notification' ? 'active' : ''}`} onClick={() => setActiveTab('notification')}><Bell /> Notification</button>
       </div>
 
-      {/* Main Content */}
       <div className="main-content">
         <div className="header">
-          <div className="header-left">
-            <button className="back-btn" onClick={handleBack}>
-              <ArrowLeft /> Back
-            </button>
-            <span className="header-title">Student Event Planner</span>
-          </div>
-          <div className="header-right">
-            <button className="logout-btn" onClick={handleLogout}>Log out</button>
-            <button className="profile-btn"><User className="profile-icon" /></button>
-            <button className="bell-btn"><Bell className="bell-icon" /></button>
-          </div>
+          <div className="header-left"><button className="back-btn" onClick={handleBack}><ArrowLeft /> Back</button><span className="header-title">Student Event Planner</span></div>
+          <div className="header-right"><button className="logout-btn" onClick={handleLogout}>Log out</button><button className="profile-btn"><User className="profile-icon" /></button><button className="bell-btn"><Bell className="bell-icon" /></button></div>
         </div>
 
-        {/* Event Detail Content */}
         <div className="content">
           <div className="event-detail-container">
-            {/* Event Image with Category Tag */}
             <div style={{ position: 'relative', marginBottom: '2rem' }}>
-              <div 
-                className="event-detail-image"
-                style={{
-                  backgroundImage: `url(${event.imageUrl || '/duck.jpg'})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  height: '350px',
-                  borderRadius: '12px',
-                  position: 'relative'
-                }}
-              >
-                {/* Category Tag - positioned at bottom left of image */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: '20px',
-                  left: '20px',
-                  backgroundColor: '#ff9800',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '4px',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  transform: 'capitalize'
-                }}>
-                  {event.category || 'General'}
-                </div>
+              <div className="event-detail-image" style={{ backgroundImage: `url(${event.imageUrl || '/duck.jpg'})`, backgroundSize: 'cover', backgroundPosition: 'center', height: '350px', borderRadius: '12px', position: 'relative' }}>
+                <div style={{ position: 'absolute', bottom: '20px', left: '20px', backgroundColor: '#ff9800', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: '600', transform: 'capitalize' }}>{event.category || 'General'}</div>
               </div>
             </div>
 
-            {/* Event Title and Register Button */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'flex-start', 
-              marginBottom: '2rem',
-              gap: '2rem'
-            }}>
-              <h1 style={{ 
-                fontSize: '2.5rem', 
-                fontWeight: 'bold', 
-                color: '#333', 
-                margin: 0,
-                flex: 1
-              }}>
-                {event.title}
-              </h1>
-              {/* ✅ ปุ่ม Register - เปลี่ยนสีตาม status */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', gap: '2rem' }}>
+              <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#333', margin: 0, flex: 1 }}>{event.title}</h1>
               <button 
                 className="banner-btn"
                 onClick={handleJoinEvent}
                 disabled={isRegistered || event.currentParticipants >= event.maxParticipants}
-                style={{
-                  backgroundColor: isRegistered 
-                    ? '#9e9e9e' 
-                    : event.currentParticipants >= event.maxParticipants 
-                      ? '#f44336' 
-                      : '#ffd740',
-                  color: isRegistered || event.currentParticipants >= event.maxParticipants ? '#fff' : '#000',
-                  border: 'none',
-                  padding: '0.75rem 2rem',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: isRegistered || event.currentParticipants >= event.maxParticipants ? 'not-allowed' : 'pointer',
-                  whiteSpace: 'nowrap',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  opacity: isRegistered || event.currentParticipants >= event.maxParticipants ? 0.7 : 1
-                }}
+                style={{ backgroundColor: isRegistered ? '#9e9e9e' : event.currentParticipants >= event.maxParticipants ? '#f44336' : '#ffd740', color: isRegistered || event.currentParticipants >= event.maxParticipants ? '#fff' : '#000', border: 'none', padding: '0.75rem 2rem', borderRadius: '8px', fontSize: '1rem', fontWeight: '600', cursor: isRegistered || event.currentParticipants >= event.maxParticipants ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isRegistered || event.currentParticipants >= event.maxParticipants ? 0.7 : 1 }}
               >
                 {isRegistered ? '✓ Registered' : event.currentParticipants >= event.maxParticipants ? '✗ Full' : '🔧 Register'}
               </button>
             </div>
 
-            {/* Date and Time Section - Blue Border Box */}
-            <div style={{
-              border: '2px solid #2196f3',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              marginBottom: '2rem',
-              backgroundColor: '#f8f9fa'
-            }}>
-              <h3 style={{
-                fontSize: '1.2rem',
-                marginBottom: '1rem',
-                color: '#333',
-                fontWeight: '600'
-              }}>
-                Date and Time
-              </h3>
-              
+            <div style={{ border: '2px solid #2196f3', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', backgroundColor: '#f8f9fa' }}>
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#333', fontWeight: '600' }}>Date and Time</h3>
               <div style={{ display: 'flex', gap: '3rem', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Calendar size={20} color="#666" />
-                  <span style={{ color: '#666' }}>
-                    <strong>Date:</strong> {formatDate(event.startDate || event.date)}
-                  </span>
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Clock size={20} color="#666" />
-                  <span style={{ color: '#666' }}>
-                    <strong>Time:</strong> {formatTime(event.startTime)} - {formatTime(event.endTime)}
-                  </span>
-                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Calendar size={20} color="#666" /><span style={{ color: '#666' }}><strong>Date:</strong> {formatDate(event.startDate || event.date)}</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clock size={20} color="#666" /><span style={{ color: '#666' }}><strong>Time:</strong> {formatTime(event.startTime)} - {formatTime(event.endTime)}</span></div>
               </div>
-
-              <button
-                onClick={handleAddToCalendar}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  backgroundColor: 'white',
-                  border: '1px solid #2196f3',
-                  borderRadius: '6px',
-                  color: '#2196f3',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#2196f3';
-                  e.target.style.color = 'white';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.color = '#2196f3';
-                }}
-              >
-                <CalendarPlus size={18} />
-                + Add to Calendar
-              </button>
+              <button onClick={handleAddToCalendar} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', backgroundColor: 'white', border: '1px solid #2196f3', borderRadius: '6px', color: '#2196f3', cursor: 'pointer', fontSize: '0.95rem', fontWeight: '500', transition: 'all 0.3s ease' }}><CalendarPlus size={18} /> + Add to Calendar</button>
             </div>
 
-            {/* Event Description */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ 
-                fontSize: '1.3rem', 
-                marginBottom: '1rem', 
-                color: '#333', 
-                fontWeight: '600' 
-              }}>
-                Event Description
-              </h3>
-              <p style={{ 
-                lineHeight: '1.8', 
-                color: '#666', 
-                fontSize: '1rem' 
-              }}>
-                {event.description || 'No description available.'}
-              </p>
-            </div>
+            <div style={{ marginBottom: '2rem' }}><h3 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: '#333', fontWeight: '600' }}>Event Description</h3><p style={{ lineHeight: '1.8', color: '#666', fontSize: '1rem' }}>{event.description || 'No description available.'}</p></div>
 
-            {/* ✅ Tags Section */}
             {event.tags && event.tags.length > 0 && (
               <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ 
-                  fontSize: '1.2rem', 
-                  marginBottom: '1rem', 
-                  color: '#333', 
-                  fontWeight: '600' 
-                }}>
-                  Tags
-                </h3>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {event.tags.map((tag, index) => (
-                    <span 
-                      key={index}
-                      style={{
-                        padding: '0.4rem 0.8rem',
-                        backgroundColor: '#e3f2fd',
-                        color: '#1976d2',
-                        borderRadius: '16px',
-                        fontSize: '0.9rem'
-                      }}
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#333', fontWeight: '600' }}>Tags</h3>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>{event.tags.map((tag, index) => (<span key={index} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#e3f2fd', color: '#1976d2', borderRadius: '16px', fontSize: '0.9rem' }}>#{tag}</span>))}</div>
               </div>
             )}
 
-            {/* Additional Info Cards */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-              gap: '1.5rem',
-              marginTop: '2rem'
-            }}>
-              {/* Location Card */}
-              <div style={{
-                padding: '1.5rem',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '8px',
-                border: '1px solid #e0e0e0'
-              }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.5rem', 
-                  marginBottom: '0.5rem' 
-                }}>
-                  <MapPin size={20} color="#2196f3" />
-                  <strong style={{ color: '#333' }}>Location</strong>
-                </div>
-                <p style={{ color: '#666', margin: 0, marginBottom: '0.25rem' }}>
-                  {event.location || 'TBA'}
-                </p>
-                {event.building && (
-                  <p style={{ color: '#999', margin: 0, fontSize: '0.9rem' }}>
-                    Building: {event.building}
-                    {event.floor && `, Floor: ${event.floor}`}
-                  </p>
-                )}
-              </div>
-
-              {/* Participants Card */}
-              <div style={{
-                padding: '1.5rem',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '8px',
-                border: '1px solid #e0e0e0'
-              }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.5rem', 
-                  marginBottom: '0.5rem' 
-                }}>
-                  <Users size={20} color="#2196f3" />
-                  <strong style={{ color: '#333' }}>Participants</strong>
-                </div>
-                <p style={{ color: '#666', margin: 0 }}>
-                  {event.currentParticipants || 0} / {event.maxParticipants || 100} registered
-                </p>
-              </div>
-
-              {/* Organizer Card */}
-              <div style={{
-                padding: '1.5rem',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '8px',
-                border: '1px solid #e0e0e0'
-              }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '0.5rem', 
-                  marginBottom: '0.5rem' 
-                }}>
-                  <User size={20} color="#2196f3" />
-                  <strong style={{ color: '#333' }}>Organizer</strong>
-                </div>
-                <p style={{ color: '#666', margin: 0 }}>
-                  {event.organizer || event.organizerName || 'Unknown'}
-                </p>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
+              <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #e0e0e0' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><MapPin size={20} color="#2196f3" /><strong style={{ color: '#333' }}>Location</strong></div><p style={{ color: '#666', margin: 0, marginBottom: '0.25rem' }}>{event.location || 'TBA'}</p>{event.building && (<p style={{ color: '#999', margin: 0, fontSize: '0.9rem' }}>Building: {event.building}{event.floor && `, Floor: ${event.floor}`}</p>)}</div>
+              <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #e0e0e0' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><Users size={20} color="#2196f3" /><strong style={{ color: '#333' }}>Participants</strong></div><p style={{ color: '#666', margin: 0 }}>{event.currentParticipants || 0} / {event.maxParticipants || 100} registered</p></div>
+              <div style={{ padding: '1.5rem', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #e0e0e0' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}><User size={20} color="#2196f3" /><strong style={{ color: '#333' }}>Organizer</strong></div><p style={{ color: '#666', margin: 0 }}>{event.organizer || event.organizerName || 'Unknown'}</p></div>
             </div>
           </div>
         </div>
 
-        {/* Confirmation Modal */}
         {showConfirmModal && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000
-          }}>
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              padding: '2rem',
-              maxWidth: '500px',
-              width: '90%',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-            }}>
-              {/* Event Image */}
-              <div style={{
-                width: '100%',
-                height: '200px',
-                backgroundImage: `url(${event.imageUrl || '/duck.jpg'})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                borderRadius: '8px',
-                marginBottom: '1.5rem'
-              }}></div>
-
-              {/* Event Title */}
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                color: '#333',
-                marginBottom: '1rem',
-                textAlign: 'center'
-              }}>
-                {event.title}
-              </h2>
-
-              {/* Sub Total */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '1rem 0',
-                borderTop: '1px solid #e0e0e0',
-                borderBottom: '1px solid #e0e0e0',
-                marginBottom: '1.5rem'
-              }}>
-                <span style={{ color: '#666', fontSize: '1.1rem' }}>Sub Total:</span>
-                <span style={{ color: '#4caf50', fontSize: '1.2rem', fontWeight: 'bold' }}>Free</span>
-              </div>
-
-              {/* Date */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '2rem'
-              }}>
-                <span style={{ color: '#666', fontSize: '1rem' }}>Date</span>
-                <span style={{ color: '#4caf50', fontSize: '1rem', fontWeight: '600' }}>
-                  {formatDate(event.startDate || event.date)}
-                </span>
-              </div>
-
-              {/* Confirm Button */}
-              <button
-                onClick={handleConfirmRegister}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  backgroundColor: registering ? '#9e9e9e' : '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '1.1rem',
-                  fontWeight: '600',
-                  cursor: registering ? 'not-allowed' : 'pointer',
-                  marginBottom: '0.5rem'
-                }}
-                onMouseEnter={(e) => !registering && (e.target.style.backgroundColor = '#45a049')}
-                onMouseLeave={(e) => !registering && (e.target.style.backgroundColor = '#4caf50')}
-              >
-                {registering ? 'กำลังลงทะเบียน...' : 'Confirm'}
-              </button>
-
-              {/* Cancel Button */}
-              <button
-                onClick={handleCancelRegister}
-                disabled={registering}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  backgroundColor: 'transparent',
-                  color: '#666',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  cursor: registering ? 'not-allowed' : 'pointer'
-                }}
-                onMouseEnter={(e) => {
-                  if (!registering) e.target.style.backgroundColor = '#f5f5f5';
-                }}
-                onMouseLeave={(e) => {
-                  if (!registering) e.target.style.backgroundColor = 'transparent';
-                }}
-              >
-                Cancel
-              </button>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '2rem', maxWidth: '500px', width: '90%', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)' }}>
+              <div style={{ width: '100%', height: '200px', backgroundImage: `url(${event.imageUrl || '/duck.jpg'})`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '8px', marginBottom: '1.5rem' }}></div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#333', marginBottom: '1rem', textAlign: 'center' }}>{event.title}</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 0', borderTop: '1px solid #e0e0e0', borderBottom: '1px solid #e0e0e0', marginBottom: '1.5rem' }}><span style={{ color: '#666', fontSize: '1.1rem' }}>Sub Total:</span><span style={{ color: '#4caf50', fontSize: '1.2rem', fontWeight: 'bold' }}>Free</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}><span style={{ color: '#666', fontSize: '1rem' }}>Date</span><span style={{ color: '#4caf50', fontSize: '1rem', fontWeight: '600' }}>{formatDate(event.startDate || event.date)}</span></div>
+              <button onClick={handleConfirmRegister} style={{ width: '100%', padding: '1rem', backgroundColor: registering ? '#9e9e9e' : '#4caf50', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: '600', cursor: registering ? 'not-allowed' : 'pointer', marginBottom: '0.5rem' }}>{registering ? 'กำลังลงทะเบียน...' : 'Confirm'}</button>
+              <button onClick={handleCancelRegister} disabled={registering} style={{ width: '100%', padding: '1rem', backgroundColor: 'transparent', color: '#666', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', cursor: registering ? 'not-allowed' : 'pointer' }}>Cancel</button>
             </div>
           </div>
         )}

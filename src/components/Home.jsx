@@ -31,12 +31,10 @@ function PageHome() {
     const { logOut, user } = useUserAuth();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("dashboard");
-
     // State สำหรับ events จาก database
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
     const [userProfile, setUserProfile] = useState(null);
     const [myRegistrations, setMyRegistrations] = useState([]);
 
@@ -44,7 +42,6 @@ function PageHome() {
     useEffect(() => {
         const fetchUserProfile = async () => {
             if (!user) return;
-
             try {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists()) {
@@ -55,7 +52,6 @@ function PageHome() {
                 console.error("Error fetching user profile:", err);
             }
         };
-
         fetchUserProfile();
     }, [user]);
 
@@ -65,30 +61,24 @@ function PageHome() {
             try {
                 setLoading(true);
                 const eventsRef = collection(db, "events");
-
-                // ✅ ใช้แค่ orderBy อย่างเดียว (ไม่ต้อง index)
+                // ✅ ใช้แค่ orderBy อย่างเดียว
                 const q = query(eventsRef, orderBy("createdAt", "desc"));
-
                 const querySnapshot = await getDocs(q);
-
                 const eventsData = querySnapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
                 }));
-
                 console.log("✅ Events loaded:", eventsData.length);
                 setEvents(eventsData);
                 setError(null);
             } catch (err) {
                 console.error("❌ Error fetching events:", err);
-                console.error("Error code:", err.code);
-                console.error("Error message:", err.message);
+                // Fallback กรณีไม่มี index หรือ error อื่นๆ
                 setError(`ไม่สามารถโหลดข้อมูล events ได้: ${err.message}`);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchEvents();
     }, []);
 
@@ -98,17 +88,13 @@ function PageHome() {
             if (!user || !userProfile || loading) {
                 return;
             }
-
             if (userProfile.role !== "student") {
                 setMyRegistrations([]);
                 return;
             }
-
             try {
                 console.log("🔵Loading registrations for user:", user.uid);
-
                 const registeredEvents = [];
-
                 events.forEach((event) => {
                     if (
                         event.participants &&
@@ -117,7 +103,6 @@ function PageHome() {
                         const userParticipant = event.participants.find(
                             (p) => p.userId === user.uid
                         );
-
                         if (userParticipant) {
                             registeredEvents.push({
                                 id: event.id,
@@ -135,20 +120,17 @@ function PageHome() {
                         }
                     }
                 });
-
                 registeredEvents.sort((a, b) => {
                     const dateA = new Date(a.registrationDate || 0);
                     const dateB = new Date(b.registrationDate || 0);
                     return dateB - dateA;
                 });
-
                 console.log("✅ Registered events:", registeredEvents);
                 setMyRegistrations(registeredEvents);
             } catch (err) {
                 console.error("❌ Error loading registrations:", err);
             }
         };
-
         loadMyRegistrations();
     }, [user, userProfile, events, loading]);
 
@@ -165,11 +147,16 @@ function PageHome() {
         navigate(`/event/${eventId}`);
     };
 
+    // ✅ ฟังก์ชันสำคัญ: ไปหน้า EventConfirmed
+    const handleRegisteredEventClick = (eventId) => {
+        if (!eventId) return;
+        navigate(`/event-confirmed/${eventId}`);
+    };
+
     const handleProfileClick = () => {
         navigate("/profile");
     };
 
-    // ฟังก์ชันสำหรับไปหน้า Notification
     const handleNotificationClick = () => {
         navigate("/notification");
     };
@@ -179,10 +166,8 @@ function PageHome() {
             event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             event.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             event.category?.toLowerCase().includes(searchQuery.toLowerCase());
-
         const matchesCategory =
             selectedCategory === "" || event.category === selectedCategory;
-
         return matchesSearch && matchesCategory;
     });
 
@@ -191,7 +176,6 @@ function PageHome() {
         setShowFilter(false);
     };
 
-    // ดึง categories ที่ไม่ซ้ำกันจาก events
     const categories = [
         ...new Set(events.map((event) => event.category).filter(Boolean)),
     ];
@@ -206,9 +190,7 @@ function PageHome() {
                     </div>
                     <div className="logo-text">PLANNER</div>
                 </div>
-
                 <div className="overview-title">OVERVIEW</div>
-
                 <button
                     className={`nav-item ${
                         activeTab === "dashboard" ? "active" : ""
@@ -225,7 +207,6 @@ function PageHome() {
                 >
                     <Inbox /> Inbox
                 </button>
-                {/* เพิ่มการลิงก์ไปหน้า Notification */}
                 <button
                     className={`nav-item ${
                         activeTab === "notification" ? "active" : ""
@@ -248,7 +229,6 @@ function PageHome() {
                         </span>
                     </div>
                     <div className="header-right">
-                        {/* ✅ แสดงชื่อและ role */}
                         {userProfile && (
                             <div
                                 style={{
@@ -288,7 +268,6 @@ function PageHome() {
                                 </span>
                             </div>
                         )}
-
                         <button className="logout-btn" onClick={handleLogout}>
                             Log out
                         </button>
@@ -298,7 +277,6 @@ function PageHome() {
                         >
                             <User className="profile-icon" />
                         </button>
-                        {/* เพิ่มการลิงก์ที่ไอคอนกระดิ่ง */}
                         <button
                             className="bell-btn"
                             onClick={handleNotificationClick}
@@ -406,17 +384,6 @@ function PageHome() {
                                         "0 4px 12px rgba(102, 126, 234, 0.3)",
                                     transition: "all 0.3s ease",
                                 }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.transform =
-                                        "translateY(-2px)";
-                                    e.target.style.boxShadow =
-                                        "0 6px 20px rgba(102, 126, 234, 0.4)";
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.transform = "translateY(0)";
-                                    e.target.style.boxShadow =
-                                        "0 4px 12px rgba(102, 126, 234, 0.3)";
-                                }}
                             >
                                 📊 Go to Organizer Dashboard
                             </button>
@@ -447,8 +414,6 @@ function PageHome() {
                                 {myRegistrations.length > 0 &&
                                     `(${myRegistrations.length})`}
                             </h3>
-
-                            {/* ✅ แสดง Empty State ถ้ายังไม่มี registrations */}
                             {myRegistrations.length === 0 ? (
                                 <div
                                     style={{
@@ -457,15 +422,7 @@ function PageHome() {
                                         color: "#666",
                                     }}
                                 >
-                                    <p
-                                        style={{
-                                            fontSize: "1rem",
-                                            marginBottom: "0.5rem",
-                                        }}
-                                    >
-                                        You haven't registered for any events
-                                        yet
-                                    </p>
+                                    <p>You haven't registered for any events yet</p>
                                     <p
                                         style={{
                                             fontSize: "0.875rem",
@@ -488,9 +445,10 @@ function PageHome() {
                                     {myRegistrations.map((registration) => (
                                         <div
                                             key={registration.id}
+                                            // ✅ คลิกแล้วไปหน้า EventConfirmed
                                             onClick={() =>
-                                                navigate(
-                                                    `/event/${registration.eventId}`
+                                                handleRegisteredEventClick(
+                                                    registration.eventId
                                                 )
                                             }
                                             style={{
@@ -606,33 +564,18 @@ function PageHome() {
                         </div>
                     </div>
 
-                    {/* Loading State */}
                     {loading && (
-                        <div
-                            style={{
-                                textAlign: "center",
-                                padding: "3rem",
-                                color: "#666",
-                            }}
-                        >
+                        <div style={{ textAlign: "center", padding: "3rem" }}>
                             <p>กำลังโหลดข้อมูล...</p>
                         </div>
                     )}
 
-                    {/* Error State */}
                     {error && (
-                        <div
-                            style={{
-                                textAlign: "center",
-                                padding: "3rem",
-                                color: "#ff0000",
-                            }}
-                        >
+                        <div style={{ textAlign: "center", padding: "3rem", color: "red" }}>
                             <p>{error}</p>
                         </div>
                     )}
 
-                    {/* Filter Info */}
                     {!loading && (searchQuery || selectedCategory) && (
                         <div style={{ marginBottom: "1rem", color: "#666" }}>
                             Found {filteredEvents.length} event(s)
@@ -657,26 +600,21 @@ function PageHome() {
                         </div>
                     )}
 
-                    {/* Events Grid */}
-                    {!loading &&
-                        !error &&
-                        (filteredEvents.length > 0 ? (
+                    {!loading && !error && (
+                        filteredEvents.length > 0 ? (
                             <div className="events-grid">
                                 {filteredEvents.map((event) => (
                                     <article
                                         key={event.id}
                                         className="event-card"
-                                        onClick={() =>
-                                            handleEventClick(event.id)
-                                        }
+                                        onClick={() => handleEventClick(event.id)}
                                         style={{ cursor: "pointer" }}
                                     >
                                         <div
                                             className="event-image"
                                             style={{
                                                 backgroundImage: `url(${
-                                                    event.imageUrl ||
-                                                    "/duck.jpg"
+                                                    event.imageUrl || "/duck.jpg"
                                                 })`,
                                                 backgroundSize: "cover",
                                                 backgroundPosition: "center",
@@ -694,45 +632,36 @@ function PageHome() {
                                                     className="progress-fill"
                                                     style={{
                                                         width: `${
-                                                            ((event.currentParticipants ||
-                                                                0) /
+                                                            ((event.currentParticipants || 0) /
                                                                 event.capacity) *
                                                             100
                                                         }%`,
                                                     }}
                                                 ></div>
                                             </div>
-
-                                            {/* ✅ เพิ่มแสดงข้อมูล location และ participants */}
                                             <div
                                                 style={{
                                                     display: "flex",
-                                                    justifyContent:
-                                                        "space-between",
+                                                    justifyContent: "space-between",
                                                     alignItems: "center",
                                                     marginTop: "0.5rem",
                                                     paddingTop: "0.5rem",
-                                                    borderTop:
-                                                        "1px solid #e0e0e0",
+                                                    borderTop: "1px solid #e0e0e0",
                                                     fontSize: "0.85rem",
                                                     color: "#666",
                                                 }}
                                             >
                                                 <div>📍 {event.location}</div>
                                                 <div>
-                                                    👥{" "}
-                                                    {event.currentParticipants ||
-                                                        0}
+                                                    👥 {event.currentParticipants || 0}
                                                     /{event.capacity}
                                                 </div>
                                             </div>
-
                                             <div className="event-author">
                                                 <div className="author-avatar"></div>
                                                 <div className="author-info">
                                                     <div className="author-name">
-                                                        {event.organizerName ||
-                                                            "Unknown"}
+                                                        {event.organizerName || "Unknown"}
                                                     </div>
                                                     <div className="author-role">
                                                         Organizer
@@ -744,17 +673,12 @@ function PageHome() {
                                 ))}
                             </div>
                         ) : (
-                            <div
-                                style={{
-                                    textAlign: "center",
-                                    padding: "3rem",
-                                    color: "#666",
-                                }}
-                            >
+                            <div style={{ textAlign: "center", padding: "3rem" }}>
                                 <h3>No events found</h3>
                                 <p>Try adjusting your search or filters</p>
                             </div>
-                        ))}
+                        )
+                    )}
                 </div>
             </div>
         </div>

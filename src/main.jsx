@@ -76,8 +76,22 @@ const router = createBrowserRouter([
         element: <Notification />,
     },
     {
-        path: "/event/:eventId/confirmed",
-        element: <EventConfirmed />,
+        
+        path: "/event-confirmed/:eventId", // ✅ แก้ path ให้ตรงกับ Home.jsx
+        element: (
+            <ProtectedRoute> {/* ✅ แนะนำให้ใส่ ProtectedRoute เพราะหน้านี้ต้องใช้ user.uid */}
+                <EventConfirmed />
+        </ProtectedRoute>
+    ),
+    },
+    {
+        // ✅ แก้ไขตรงนี้: ต้องเป็น /event/:eventId/confirmed เพื่อให้ตรงกับหน้า EventDetail
+        path: "/event/:eventId/confirmed", 
+        element: (
+            <ProtectedRoute>
+                <EventConfirmed />
+            </ProtectedRoute>
+        ),
     },
     {
         path: "/forgotPassword",
