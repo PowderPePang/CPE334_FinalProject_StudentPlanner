@@ -859,3 +859,26 @@
         max-width: 100%;
     }
 }
+.reviews-view {
+    padding: 1rem;
+}
+
+.reviews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.reviews-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #2d3748;
+}
+
+.reviews-count {
+    color: #666;
+    margin: 0;
+}

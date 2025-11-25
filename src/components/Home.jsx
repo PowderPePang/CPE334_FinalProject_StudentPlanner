@@ -196,6 +196,12 @@ function PageHome() {
         ...new Set(events.map((event) => event.category).filter(Boolean)),
     ];
 
+    const isEventEnded = (eventDate) => {
+    if (!eventDate) return false;
+    const date = eventDate.toDate ? eventDate.toDate() : new Date(eventDate);
+    return date < new Date();
+    };
+
     return (
         <div className="container">
             {/* Sidebar */}
@@ -488,96 +494,116 @@ function PageHome() {
                                     {myRegistrations.map((registration) => (
                                         <div
                                             key={registration.id}
-                                            onClick={() =>
-                                                navigate(
-                                                    `/event/${registration.eventId}`
-                                                )
-                                            }
                                             style={{
                                                 background: "white",
                                                 borderRadius: "8px",
                                                 padding: "1rem",
-                                                cursor: "pointer",
                                                 transition: "all 0.3s ease",
-                                                boxShadow:
-                                                    "0 2px 8px rgba(0, 0, 0, 0.1)",
+                                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                                             }}
                                             onMouseEnter={(e) => {
-                                                e.currentTarget.style.transform =
-                                                    "translateY(-4px)";
-                                                e.currentTarget.style.boxShadow =
-                                                    "0 4px 16px rgba(102, 126, 234, 0.3)";
+                                                e.currentTarget.style.transform = "translateY(-4px)";
+                                                e.currentTarget.style.boxShadow = "0 4px 16px rgba(102, 126, 234, 0.3)";
                                             }}
                                             onMouseLeave={(e) => {
-                                                e.currentTarget.style.transform =
-                                                    "translateY(0)";
-                                                e.currentTarget.style.boxShadow =
-                                                    "0 2px 8px rgba(0, 0, 0, 0.1)";
+                                                e.currentTarget.style.transform = "translateY(0)";
+                                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
                                             }}
                                         >
-                                            <h4
-                                                style={{
-                                                    fontSize: "1rem",
-                                                    fontWeight: "600",
-                                                    color: "#2d3748",
-                                                    margin: "0 0 0.5rem 0",
-                                                }}
+                                            {/* ✅ Event Info - clickable */}
+                                            <div 
+                                                onClick={() => navigate(`/event/${registration.eventId}`)}
+                                                style={{ cursor: "pointer" }}
                                             >
-                                                {registration.eventTitle}
-                                            </h4>
-                                            <p
-                                                style={{
-                                                    fontSize: "0.85rem",
-                                                    color: "#666",
-                                                    margin: "0 0 0.5rem 0",
-                                                }}
-                                            >
-                                                🗓️{" "}
-                                                {registration.eventDate &&
-                                                    (registration.eventDate
-                                                        .toDate
-                                                        ? registration.eventDate
-                                                              .toDate()
-                                                              .toLocaleDateString(
-                                                                  "th-TH",
-                                                                  {
-                                                                      year: "numeric",
-                                                                      month: "long",
-                                                                      day: "numeric",
-                                                                  }
-                                                              )
-                                                        : typeof registration.eventDate ===
-                                                          "string"
-                                                        ? new Date(
-                                                              registration.eventDate
-                                                          ).toLocaleDateString(
-                                                              "th-TH",
-                                                              {
-                                                                  year: "numeric",
-                                                                  month: "long",
-                                                                  day: "numeric",
-                                                              }
-                                                          )
-                                                        : "TBA")}
-                                            </p>
-                                            <span
-                                                style={{
-                                                    display: "inline-block",
-                                                    padding: "0.25rem 0.5rem",
-                                                    borderRadius: "4px",
-                                                    fontSize: "0.85rem",
-                                                    fontWeight: "500",
-                                                    backgroundColor:
-                                                        registration.checkedIn
+                                                <h4
+                                                    style={{
+                                                        fontSize: "1rem",
+                                                        fontWeight: "600",
+                                                        color: "#2d3748",
+                                                        margin: "0 0 0.5rem 0",
+                                                    }}
+                                                >
+                                                    {registration.eventTitle}
+                                                </h4>
+                                                <p
+                                                    style={{
+                                                        fontSize: "0.85rem",
+                                                        color: "#666",
+                                                        margin: "0 0 0.5rem 0",
+                                                    }}
+                                                >
+                                                    🗓️{" "}
+                                                    {registration.eventDate &&
+                                                        (registration.eventDate.toDate
+                                                            ? registration.eventDate
+                                                                .toDate()
+                                                                .toLocaleDateString("th-TH", {
+                                                                    year: "numeric",
+                                                                    month: "long",
+                                                                    day: "numeric",
+                                                                })
+                                                            : typeof registration.eventDate === "string"
+                                                            ? new Date(registration.eventDate).toLocaleDateString(
+                                                                "th-TH",
+                                                                {
+                                                                    year: "numeric",
+                                                                    month: "long",
+                                                                    day: "numeric",
+                                                                }
+                                                            )
+                                                            : "TBA")}
+                                                </p>
+                                                <span
+                                                    style={{
+                                                        display: "inline-block",
+                                                        padding: "0.25rem 0.5rem",
+                                                        borderRadius: "4px",
+                                                        fontSize: "0.85rem",
+                                                        fontWeight: "500",
+                                                        backgroundColor: registration.checkedIn
                                                             ? "#4caf50"
                                                             : "#ff9800",
-                                                    color: "white",
-                                                }}
-                                            >
-                                                {registration.checkedIn
-                                                    ? "✅ Checked In"
-                                                    : "⏳ Registered"}
-                                            </span>
+                                                        color: "white",
+                                                    }}
+                                                >
+                                                    {registration.checkedIn
+                                                        ? "✅ Checked In"
+                                                        : "⏳ Registered"}
+                                                </span>
+                                            </div>
+
+                                            {/* ✅ ปุ่ม Review - แสดงเฉพาะ event ที่จบแล้ว */}
+                                            {isEventEnded(registration.eventDate) && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // ป้องกัน navigate ซ้อน
+                                                        navigate(`/event/${registration.eventId}/review`);
+                                                    }}
+                                                    style={{
+                                                        width: "100%",
+                                                        marginTop: "0.75rem",
+                                                        padding: "0.5rem",
+                                                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: "6px",
+                                                        fontSize: "0.9rem",
+                                                        fontWeight: "600",
+                                                        cursor: "pointer",
+                                                        transition: "all 0.3s ease",
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.transform = "scale(1.02)";
+                                                        e.target.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.4)";
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.transform = "scale(1)";
+                                                        e.target.style.boxShadow = "none";
+                                                    }}
+                                                >
+                                                    💬 Write Review
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

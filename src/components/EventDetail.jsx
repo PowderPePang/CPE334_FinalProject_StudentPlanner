@@ -477,6 +477,114 @@ function EventDetail() {
               </div>
             )}
 
+            {/* Reviews Section */}
+            {event.reviews && event.reviews.length > 0 && (
+              <div style={{ marginBottom: "2rem" }}>
+                  <div style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "1rem"
+                  }}>
+                      <h3 style={{ 
+                          fontSize: '1.3rem', 
+                          color: '#333', 
+                          fontWeight: '600',
+                          margin: 0
+                      }}>
+                          Event Reviews ({event.totalReviews || event.reviews.length})
+                      </h3>
+                      {event.averageRating && (
+                          <div style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              padding: "0.5rem 1rem",
+                              backgroundColor: "#fff3cd",
+                              borderRadius: "8px"
+                          }}>
+                              <span style={{ fontSize: "1.5rem" }}>⭐</span>
+                              <span style={{ 
+                                  fontSize: "1.25rem", 
+                                  fontWeight: "700" 
+                              }}>
+                                  {event.averageRating.toFixed(1)}
+                              </span>
+                              <span style={{ color: "#666" }}>/5</span>
+                          </div>
+                      )}
+                  </div>
+
+                  <div style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "1rem"
+                  }}>
+                      {event.reviews
+                          .sort((a, b) => {
+                              const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                              const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                              return dateB - dateA;
+                          })
+                          .map((review, index) => (
+                              <div 
+                                  key={index}
+                                  style={{
+                                      padding: "1.5rem",
+                                      backgroundColor: "#f8f9fa",
+                                      borderRadius: "8px",
+                                      border: "1px solid #e0e0e0"
+                                  }}
+                              >
+                                  <div style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "start",
+                                      marginBottom: "0.75rem"
+                                  }}>
+                                      <div>
+                                          <div style={{
+                                              fontWeight: "600",
+                                              color: "#2d3748",
+                                              marginBottom: "0.25rem"
+                                          }}>
+                                              {review.userName}
+                                          </div>
+                                          <div style={{
+                                              fontSize: "0.85rem",
+                                              color: "#999"
+                                          }}>
+                                              {review.createdAt?.toDate 
+                                                  ? review.createdAt.toDate().toLocaleDateString('th-TH')
+                                                  : 'Recent'}
+                                          </div>
+                                      </div>
+                                      <div style={{
+                                          display: "flex",
+                                          gap: "0.25rem"
+                                      }}>
+                                          {[...Array(5)].map((_, i) => (
+                                              <span key={i} style={{
+                                                  color: i < review.rating ? "#ffd700" : "#e0e0e0"
+                                              }}>
+                                                  ⭐
+                                              </span>
+                                          ))}
+                                      </div>
+                                  </div>
+                                  <p style={{
+                                      color: "#666",
+                                      lineHeight: "1.6",
+                                      margin: 0
+                                  }}>
+                                      {review.comment}
+                                  </p>
+                              </div>
+                          ))}
+                  </div>
+              </div>
+           )}
+
             {/* Additional Info Cards */}
             <div style={{ 
               display: 'grid', 

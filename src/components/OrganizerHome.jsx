@@ -25,6 +25,7 @@ import {
     Search,
     Filter,
     MoreVertical,
+    Star,
 } from "lucide-react";
 import "../style/OrganizerHome.css";
 
@@ -40,6 +41,7 @@ function OrganizerHome() {
     const [showEventMenu, setShowEventMenu] = useState(null);
     const [userProfile, setUserProfile] = useState(null);
     const [profileLoading, setProfileLoading] = useState(true); // ✅ เพิ่ม loading state
+    const [selectedEventForReviews, setSelectedEventForReviews] = useState(null);
 
     const { logOut, user, loading: authLoading } = useUserAuth();
     const navigate = useNavigate();
@@ -426,6 +428,17 @@ function OrganizerHome() {
                                                 Participants
                                             </button>
                                             <button
+                                                onClick={() => {
+                                                    setSelectedEventForReviews(event);
+                                                    setShowEventMenu(null);
+                                                    setActiveTab("reviews");
+                                                }}
+                                                className="menu-item"
+                                            >
+                                                <Star size={16} /> View Reviews 
+                                                {event.reviews?.length > 0 && ` (${event.reviews.length})`}
+                                            </button>
+                                            <button
                                                 onClick={() =>
                                                     handleDeleteEvent(event.id)
                                                 }
@@ -443,7 +456,154 @@ function OrganizerHome() {
                 ))}
             </div>
         );
-    };
+    }; // ✅ จบ renderEventsList ตรงนี้
+
+    // ✅ เพิ่ม renderReviews() แยกออกมาตรงนี้ (ภายนอก renderEventsList)
+    const renderReviews = () => {
+        const event = selectedEventForReviews || filteredEvents[0];
+
+        if (!event) {
+            return (
+                <div className="empty-state">
+                    <Star size={64} />
+                    <h3>No event selected</h3>
+                    <p>Select an event to view its reviews</p>
+                </div>
+            );
+        }
+
+        const reviews = event.reviews || [];
+
+        return (
+            <div className="reviews-view">
+                <div className="reviews-header">
+                    <div>
+                        <h3>{event.title}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                            <p className="reviews-count">
+                                {reviews.length} reviews
+                            </p>
+                            {event.averageRating && (
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.5rem 1rem',
+                                    backgroundColor: '#fff3cd',
+                                    borderRadius: '8px'
+                                }}>
+                                    <span style={{ fontSize: '1.5rem' }}>⭐</span>
+                                    <span style={{ fontSize: '1.25rem', fontWeight: '700' }}>
+                                        {event.averageRating.toFixed(1)}
+                                    </span>
+                                    <span style={{ color: '#666' }}>/5</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setActiveTab('events')}
+                        className="btn-secondary"
+                    >
+                        Back to Events
+                    </button>
+                </div>
+
+                {reviews.length === 0 ? (
+                    <div className="empty-state">
+                        <Star size={64} />
+                        <h3>No reviews yet</h3>
+                        <p>Reviews will appear here once participants submit them</p>
+                    </div>
+                ) : (
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem',
+                        padding: '1rem'
+                    }}>
+                        {reviews
+                            .sort((a, b) => {
+                                const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                                const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                                return dateB - dateA;
+                            })
+                            .map((review, index) => (
+                                <div 
+                                    key={index}
+                                    style={{
+                                        padding: '1.5rem',
+                                        backgroundColor: 'white',
+                                        borderRadius: '8px',
+                                        border: '1px solid #e0e0e0',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                                    }}
+                                >
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'start',
+                                        marginBottom: '0.75rem'
+                                    }}>
+                                        <div>
+                                            <div style={{
+                                                fontWeight: '600',
+                                                color: '#2d3748',
+                                                marginBottom: '0.25rem'
+                                            }}>
+                                                {review.userName}
+                                            </div>
+                                            <div style={{
+                                                fontSize: '0.85rem',
+                                                color: '#999'
+                                            }}>
+                                                {review.userEmail}
+                                            </div>
+                                            <div style={{
+                                                fontSize: '0.85rem',
+                                                color: '#999',
+                                                marginTop: '0.25rem'
+                                            }}>
+                                                {review.createdAt?.toDate 
+                                                    ? review.createdAt.toDate().toLocaleDateString('th-TH', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })
+                                                    : 'Recent'}
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: '0.25rem'
+                                        }}>
+                                            {[...Array(5)].map((_, i) => (
+                                                <span key={i} style={{
+                                                    color: i < review.rating ? '#ffd700' : '#e0e0e0',
+                                                    fontSize: '1.25rem'
+                                                }}>
+                                                    ⭐
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p style={{
+                                        color: '#666',
+                                        lineHeight: '1.6',
+                                        margin: 0,
+                                        whiteSpace: 'pre-wrap'
+                                    }}>
+                                        {review.comment}
+                                    </p>
+                                </div>
+                            ))}
+                    </div>
+                )}
+            </div>
+        );
+    }; 
 
     const renderParticipants = () => {
         const event = selectedEvent || filteredEvents[0];
@@ -581,6 +741,15 @@ function OrganizerHome() {
                 >
                     <Bell /> Notifications
                 </button>
+                {/* ✅ เพิ่มส่วนนี้ */}
+                <button
+                    className={`nav-item ${
+                        activeTab === "reviews" ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTab("reviews")}
+                >
+                    <Star /> Reviews
+                </button>
             </div>
 
             {/* Main Content */}
@@ -678,6 +847,7 @@ function OrganizerHome() {
                             <p>You're all caught up!</p>
                         </div>
                     )}
+                    {activeTab === "reviews" && renderReviews()}
                 </div>
             </div>
         </div>

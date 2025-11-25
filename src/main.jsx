@@ -18,6 +18,7 @@ import EventEdit from "./components/EventEdit.jsx";
 import ForgotPassword from "./components/ForgotPassword.jsx";
 import ForPartner from "./components/ForPartner.jsx";
 import StudyTips from "./components/StudyTips.jsx";
+import EventReview from "./components/EventReview.jsx";
 // Admin
 import AdminLogin from "./components/admin/AdminLogin.jsx";
 import AdminDashboard from "./components/admin/AdminDashboard.jsx";
@@ -112,6 +113,10 @@ const router = createBrowserRouter([
         path: "/admin/verification",
         element: <AdminVerification />,
     },
+    {
+        path: "/event/:eventId/review",
+        element: <EventReview />,
+    }
 ]);
 
 createRoot(document.getElementById("root")).render(
