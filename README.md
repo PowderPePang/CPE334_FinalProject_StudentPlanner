@@ -1,118 +1,75 @@
 # 🎓 Student Event Planner
 
-A **web application** built with **React (Vite)**, **Firebase**, and **Bootstrap** that helps students, lecturers, and organizers manage and join university events.  
-It includes **authentication**, **event management**, **QR check-in**, and **notification** features for a seamless event experience.
+A web application built with **React (Vite)** and **Firebase (Authentication + Firestore + Hosting)** to help students, lecturers, organizers, and admins manage and join university events.
+
+Key capabilities include authentication, event management, registration, QR check-in, notifications, and role-based access.
 
 ---
 
 ## 🔗 Repository
+GitHub: https://github.com/PowderPePang/CPE334_FinalProject_StudentPlanner.git
 
-[👉 GitHub Repository](https://github.com/PowderPePang/CPE334_FinalProject_StudentPlanner.git)
+## 🌐 Live Demo (Firebase Hosting)
+Deployed site: https://authentication-cookie.web.app/
 
 ---
 
 ## 🚀 Features
 
-### 🔐 Authentication
-- Sign up and log in using **Email & Password**
-- One-click **Google Sign-In** with OAuth 2.0
-- Manage and update user profile (name, profile picture)
+### 🔐 Authentication & User Profiles
+- Email/Password Sign Up + Sign In
+- Google Sign-In (OAuth 2.0)
+- User profile management (name, profile picture)
 
-### 🎫 Event Management
-- Organizers can **create, edit, and delete events**
-- Students can **search and view events**
-- Event details include title, date, time, location, and description
+### 🎫 Event Discovery & Management
+- Students can browse, search, and view event details
+- Organizers can create, edit, and delete events
+- Event metadata includes title, date/time, location, description, category
 
 ### 🧾 Registration & QR Check-In
-- Students can **register for events** and cancel before the event starts  
-- Each registration generates a **unique QR code** for check-in  
-- Real-time update of attendance status
+- Students can register/cancel (based on event constraints)
+- QR code generated for check-in
+- Attendance tracking (organizer-side)
 
-### 🔔 Notification System
-- Receive **registration confirmations**
-- **Reminders** before the event starts  
-- Notifications via **in-app messages**, **email**, or **LINE Notify**
+### 🔔 Notifications
+- Registration confirmations and reminders
+- (Integration may vary depending on configuration)
 
 ---
 
 ## 🛠️ Tech Stack
 
 | Category | Technology |
-|-----------|-------------|
+|---|---|
 | Frontend | React (Vite) |
+| Routing | React Router v6 |
 | Styling | Bootstrap + CSS |
-| Backend | Firebase |
+| Backend / DB | Firebase Firestore |
 | Authentication | Firebase Auth (Email/Password, Google OAuth) |
-| Database | Firebase Firestore |
-| Build Tool | Vite |
+| Hosting | Firebase Hosting |
+| E2E Testing | Playwright |
 
 ---
 
-## 🧩 Folder Structure
+## ✅ Prerequisites
 
-```
-react-firebase-auth/
-├── public/
-├── src/
-│ ├── assets/
-│ ├── auth/
-│ │ └── ProtectedRoute.jsx
-│ ├── components/
-│ │ ├── Home.jsx
-│ │ ├── Login.jsx
-│ │ └── Register.jsx
-│ ├── context/
-│ │ └── UserAuthContext.jsx
-│ ├── App.jsx
-│ ├── firebase.js
-│ ├── index.css
-│ └── main.jsx
-├── index.html
-├── package.json
-├── vite.config.js
-└── README.md
-```
+- **Node.js** (recommended: 18+)
+- **npm** (comes with Node)
+- A **Firebase Project** with:
+  - Firebase Authentication enabled
+  - Firestore Database enabled
+  - (Optional) Firebase Storage if your build uses image upload
+- (For deployment) **Firebase CLI**
+  - Install: `npm install -g firebase-tools`
 
-## ⚙️ Set up Firebase
+Optional (for testing):
+- Playwright browsers install step (see Testing section)
 
-1. Create a new project in [Firebase Console](https://console.firebase.google.com)  
-2. Enable **Authentication** (Email/Password and Google Sign-In)  
-3. Create a **Firestore Database**  
-4. Copy your Firebase configuration and paste it into `src/firebase.js`
+---
 
-```js
-// src/firebase.js
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+## 📦 Installation
 
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
-};
-
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export default app;
-```
-# Step
-## 1. Install dependencies
-```
-npm install
-```
-
-## 2. Install Firebase
-```
-npm install firebase
-```
-
-## 3. Run the project
-```
-npm run dev
-```
-
-## 🌐 Open in browser
-Visit: http://localhost:5173
+1) Clone repository
+```bash
+git clone https://github.com/PowderPePang/CPE334_FinalProject_StudentPlanner.git
+cd CPE334_FinalProject_StudentPlanner
