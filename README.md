@@ -10,7 +10,7 @@ Key capabilities include authentication, event management, registration, QR chec
 GitHub: https://github.com/PowderPePang/CPE334_FinalProject_StudentPlanner.git
 
 ## 🌐 Live Demo (Firebase Hosting)
-Deployed site: https://authentication-cookie.web.app/
+Deployed site: [https://authentication-cookie.web.app/](https://student-planner-v1.web.app/)
 
 ---
 
