@@ -72,4 +72,15 @@ Optional (for testing):
 1) Clone repository
 ```bash
 git clone https://github.com/PowderPePang/CPE334_FinalProject_StudentPlanner.git
+
 cd CPE334_FinalProject_StudentPlanner
+
+2) Install dependencies
+```bash
+npm install
+
+npm install firebase
+
+3) Run 
+```bash
+npm run dev
