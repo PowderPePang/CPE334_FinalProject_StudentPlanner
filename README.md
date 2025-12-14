@@ -128,23 +128,30 @@ The project is already set up to use environment variables. Verify that `src/fir
 
 ```javascript
 // src/firebase.js
+// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { GoogleAuthProvider } from "firebase/auth/web-extension";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    apiKey: "<YOUR_API_KEY>",
+    authDomain: "<your-auth-domain>",
+    projectId: "<your-project-id>",
+    storageBucket: "<your-storage-bucket>",
+    messagingSenderId: "<your-messaging-sender-id>",
+    appId: "<your-app-id>",
+    measurementId: "<your-measurement-id>",
 };
 
+// Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
 export default app;
+
 ```
 
 ---
